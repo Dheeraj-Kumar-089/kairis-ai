@@ -1,8 +1,0 @@
-{
-  "version": 2,
-  "rewrites": [
-    { "source": "/api/:match*", "destination": "/api" },
-    { "source": "/socket.io/:match*", "destination": "/api" },
-    { "source": "/((?!api|socket.io).*)", "destination": "/index.html" }
-  ]
-}

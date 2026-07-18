@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx nodemon server.js",
-    "build": "cd ../Frontend && npm install && npm run build && rm -rf ../Backend/public && cp -r dist ../Backend/public"
+    "build": "echo 'No build step required for backend'",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
