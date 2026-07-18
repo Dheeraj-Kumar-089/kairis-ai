@@ -65,11 +65,9 @@ authRouter.get("/google",
 
     
 authRouter.get("/google/callback",
-    passport.authenticate("google", {    // this line will send the auth code to google and then finally bring back the user's data from google and store it in req.user
+    passport.authenticate("google", {    
         session: false,
-        // FRONTEND_URL is empty in production (same-origin deploy), so this
-        // naturally becomes the relative "/login" there and an absolute
-        // "http://localhost:5173/login" in dev — no env-specific code needed.
+
         failureRedirect: `${config.FRONTEND_URL}/login`
     }),
     googleCallback,
