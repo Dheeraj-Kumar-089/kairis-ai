@@ -20,7 +20,7 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Database**: [MongoDB](https://www.mongodb.com/) (using [Mongoose](https://mongoosejs.com/))
 * **Realtime Server**: [Socket.io](https://socket.io/)
 * **Authentication**: [Passport.js](https://www.passportjs.org/) (Google OAuth 2.0 Strategy) & JWT (JSON Web Tokens)
-* **Cloud Storage**: [ImageKit.io](https://imagekit.io/) (for user & chat-structured file hosting)
+* **Cloud Storage**: [ImageKit.io](https://imagekit.io/)
 
 ### AI & Vector Databases (RAG)
 * **Orchestration**: [LangChain](https://js.langchain.com/)
@@ -37,30 +37,21 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * Single-click **Google OAuth Login** with automatic user provisioning.
 * Secure HTTP-only cookies designed to work cross-site in production.
 
-### 2. Multi-Model Routing & Daily Limits
-* **Daily Message Routing**: Automatically routes user messages between Gemini (Google's best models), Mistral AI, and Llama 3 based on daily usage thresholds.
-* **Limit Enforcement**: Displays a friendly "limit reached for today" block if all limits are exhausted.
+### 2. Thread Length Constraints & Summarization
+* **Intelligent Summarization**: Automatically condenses core topics and decisions into 3-5 paragraphs to reduce the token usage
 
-### 3. Thread Length Constraints & Summarization
-* **Intelligent Summarization**: Automatically condenses core topics and decisions of the chat history after a set threshold of messages, passing only the summary alongside subsequent messages to minimize token waste.
-* **Thread Life Warning**: Warns users when the active chat thread grows too long, recommending switching to a new chat, and disables messaging options once the thread limit is reached.
-
-### 4. Advanced Multi-File Upload & Lightbox Preview
-* **Staged Attachments**: Stage multiple image or PDF files in a compact preview row before sending.
-* **Upload Limits**: Restricts individual and total upload size as well as file count per prompt.
-* **Send Lock**: Automatically disables the send button until all staged uploads are finished.
+### 3. Advanced Multi-File Upload & Lightbox Preview
+* **Staged Attachments**: Stage up to 5 images or PDFs in a compact preview row (occupying 75% width) before sending.
+* **Upload Limits**: Limits uploads to a maximum of 5 MB per file and 15 MB in total per prompt.
 * **Fullscreen Lightbox**: Click any attachment thumbnail to open a fullscreen lightbox overlay rendered outside viewport constraints via **React Portals** (`createPortal`).
 
-### 5. Structured Storage & Context-Aware RAG (Vector DB)
-* **Structured Hosting**: Files are organized under `kairis-ai/<userId>/<chatId>/` paths in ImageKit.
-* **Context-Aware Routing**: Pinecone search queries are strictly matched against the `userId`, `chatId`, and the specific files attached in the **latest asked prompt** to prevent crosstalk.
-* **History Queries**: Automatically detects if the user is explicitly asking about older files (e.g. *"compare with the previous PDF"*) and expands the RAG search to all files in the current chat session.
-* **Score-Filtered Matching**: Employs similarity score thresholds to strip out irrelevant search noise.
+### 4. Structured Storage & Context-Aware RAG (Vector DB)
+* **Score-Filtered Matching**: Employs similarity score thresholds (`>= 0.35`) to strip out irrelevant search noise.
 
-### 6. Voice Prompting
+### 5. Voice Prompting
 * Integrated fast voice prompt input utilizing the **Web Speech API** for hands-free queries.
 
-### 7. Premium Responsive UI
+### 6. Premium Responsive UI
 * Theme toggle with smooth, customizable transition animations.
 * Fully mobile-responsive layouts with collapsable sidebars.
 
