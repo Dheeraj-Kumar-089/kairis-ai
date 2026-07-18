@@ -122,8 +122,6 @@ const Dashboard = () => {
   const handleSubmitMessage = (event) => {
     event.preventDefault();
     const trimmedMessage = chatInput.trim();
-    console.log("handleSubmitMessage state:", { chatInput, attachedFiles });
-    attachedFiles.forEach(f => console.log("File status in submit:", { name: f.name, status: f.status, fileUrl: f.fileUrl }));
     if (!trimmedMessage && attachedFiles.length === 0) return;
 
     // Gather all attachments from successfully uploaded files
@@ -201,13 +199,11 @@ const Dashboard = () => {
     newFiles.forEach(async (fItem) => {
       try {
         const response = await chat.handleUploadDocument(fItem.file);
-        console.log("Upload response for file:", fItem.name, response);
-        setAttachedFiles(prev => prev.map(item => {
-          console.log("ID match check:", { itemId: item.id, fItemId: fItem.id, isMatch: item.id === fItem.id });
-          return item.id === fItem.id 
+        setAttachedFiles(prev => prev.map(item => 
+          item.id === fItem.id 
             ? { ...item, status: 'done', fileUrl: response.fileUrl }
-            : item;
-        }));
+            : item
+        ));
       } catch (err) {
         console.error("Failed to upload file:", fItem.name, err);
         setAttachedFiles(prev => prev.map(item => 
