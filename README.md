@@ -1,6 +1,6 @@
 # Kairis AI 🤖✨
 
-Kairis AI is a premium, state-of-the-art AI assistant application powered by modern LLMs (Gemini & Mistral), Retrieval-Augmented Generation (RAG) using Pinecone, and real-time communication via Socket.io. It supports standard email authentication (with verification flow) as well as seamless Google OAuth login.
+Kairis AI is a premium, state-of-the-art AI assistant application powered by modern LLMs (Gemini, Mistral, and Llama 3), Retrieval-Augmented Generation (RAG) using Pinecone, and real-time communication via Socket.io. It supports standard email authentication (with verification flow) as well as seamless Google OAuth login.
 
 ---
 
@@ -8,11 +8,11 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 
 ### Frontend
 * **Core**: [React](https://react.dev/) + [Vite](https://vite.dev/)
-* **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 * **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/)
 * **Routing**: [React Router](https://reactrouter.com/)
 * **Icons**: [Lucide React](https://lucide.dev/)
 * **Realtime**: [Socket.io Client](https://socket.io/docs/v4/client-api/)
+* **Animations**: [Framer Motion](https://www.framer.com/motion/)
 
 ### Backend
 * **Runtime**: [Node.js](https://nodejs.org/) (ES Modules)
@@ -20,10 +20,11 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Database**: [MongoDB](https://www.mongodb.com/) (using [Mongoose](https://mongoosejs.com/))
 * **Realtime Server**: [Socket.io](https://socket.io/)
 * **Authentication**: [Passport.js](https://www.passportjs.org/) (Google OAuth 2.0 Strategy) & JWT (JSON Web Tokens)
+* **Cloud Storage**: [ImageKit.io](https://imagekit.io/) (for user & chat-structured file hosting)
 
 ### AI & Vector Databases (RAG)
 * **Orchestration**: [LangChain](https://js.langchain.com/)
-* **LLM Providers**: [Google Gemini GenAI](https://deepmind.google/technologies/gemini/) & [Mistral AI](https://mistral.ai/)
+* **LLM Providers**: Google Gemini GenAI, Mistral AI, and Llama 3 (via Groq/fallback endpoints)
 * **Vector Store**: [Pinecone Vector DB](https://www.pinecone.io/) (for context-aware document queries)
 * **Search Tool**: [Tavily Search API](https://tavily.com/) (for real-time web search capabilities)
 
@@ -31,24 +32,37 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 
 ## 🌟 Key Features
 
-1. **Secure & Versatile Auth Flow**:
-   * Traditional email/password signup with automatic verification emails.
-   * Single-click **Google OAuth Login** with automatic user provisioning.
-   * Secure HTTP-only cookies designed to work cross-site in production.
+### 1. Secure & Versatile Auth Flow
+* Traditional email/password signup with automatic verification emails.
+* Single-click **Google OAuth Login** with automatic user provisioning.
+* Secure HTTP-only cookies designed to work cross-site in production.
 
-2. **Real-time AI Chat**:
-   * Interactive chat threads with instant replies.
-   * Real-time updates and streaming powered by WebSocket protocols (Socket.io).
-   * Fully customizable thread options (create, rename, delete).
+### 2. Multi-Model Routing & Daily Limits
+* **Daily Message Routing**: Routes the first 20 daily messages to Gemini (Google's best models), followed by Mistral AI, and falls back to Llama 3 8B.
+* **Limit Enforcement**: Displays a friendly "limit reached for today" block if all limits are exhausted.
 
-3. **Smart Document Q&A (RAG)**:
-   * Upload PDF documents up to 10MB.
-   * Automatically split and index document chunks into Pinecone Vector Database using LangChain embeddings.
-   * Ask questions directly about your uploaded documents.
+### 3. Thread Length Constraints & Summarization
+* **Intelligent Summarization**: Automatically condenses core topics and decisions into 3-5 paragraphs after every 12 messages, passing only the summary alongside subsequent messages to minimize token waste.
+* **Thread Life Warning**: Prompts users to switch to a new chat after 30 messages, and automatically disables send buttons after 35 messages to preserve memory.
 
-4. **Premium Responsive UI**:
-   * Gorgeous dark/light mode toggle with QR-scan-style theme transition animation.
-   * Fully mobile-responsive sidebar, chat bubbles, and code block formatting.
+### 4. Advanced Multi-File Upload & Lightbox Preview
+* **Staged Attachments**: Stage up to 5 images or PDFs in a compact preview row (occupying 75% width) before sending.
+* **Upload Limits**: Limits uploads to a maximum of 5 MB per file and 15 MB in total per prompt.
+* **Send Lock**: Automatically disables the send button until all staged uploads are finished.
+* **Fullscreen Lightbox**: Click any attachment thumbnail to open a fullscreen lightbox overlay rendered outside viewport constraints via **React Portals** (`createPortal`).
+
+### 5. Structured Storage & Context-Aware RAG (Vector DB)
+* **Structured Hosting**: Files are organized under `kairis-ai/<userId>/<chatId>/` paths in ImageKit.
+* **Context-Aware Routing**: Pinecone search queries are strictly matched against the `userId`, `chatId`, and the specific files attached in the **latest asked prompt** to prevent crosstalk.
+* **History Queries**: Automatically detects if the user is explicitly asking about older files (e.g. *"compare with the previous PDF"*) and expands the RAG search to all files in the current chat session.
+* **Score-Filtered Matching**: Employs similarity score thresholds (`>= 0.35`) to strip out irrelevant search noise.
+
+### 6. Voice Prompting
+* Integrated fast voice prompt input utilizing the **Web Speech API** for hands-free queries.
+
+### 7. Premium Responsive UI
+* Theme toggle with smooth, customizable transition animations.
+* Fully mobile-responsive layouts with collapsable sidebars.
 
 ---
 
@@ -60,10 +74,10 @@ kairis-ai/
 │   ├── src/
 │   │   ├── config/         # DB config, app config
 │   │   ├── controllers/    # Route controllers (Auth, Chat)
-│   │   ├── middlewares/    # Authentication, Validation
+│   │   ├── middlewares/    # Authentication, Validation, Rate Limiter
 │   │   ├── models/         # MongoDB Schemas (User, Chat, Message)
 │   │   ├── routes/         # Express router endpoints
-│   │   ├── services/       # Mailjet, Email Templates, AI services
+│   │   ├── services/       # Mailjet, Email Templates, AI/RAG services
 │   │   └── sockets/        # Socket.io configurations
 │   ├── server.js           # Server startup script
 │   └── package.json
@@ -73,7 +87,7 @@ kairis-ai/
 │   ├── src/
 │   │   ├── app/            # Redux store configurations
 │   │   ├── components/     # UI elements & custom loaders
-│   │   ├── features/       # Feature domains (Auth, Chat)
+│   │   ├── features/       # Feature domains (Auth, Chat, Landing)
 │   │   ├── main.jsx        # App entrypoint
 │   │   └── index.css       # Core stylesheet
 │   ├── index.html          # HTML Shell
@@ -108,6 +122,11 @@ GOOGLE_CALLBACK_URL=http://localhost:8000/api/auth/google/callback
 MAILJET_API_KEY=your_mailjet_api_key
 MAILJET_API_SECRET=your_mailjet_api_secret
 MAILJET_SENDER_EMAIL=your_verified_sender_email
+
+# ImageKit (Cloud Storage)
+IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
+IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
+IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
 
 # AI & Vector DB keys
 GEMINI_API_KEY=your_google_gemini_api_key

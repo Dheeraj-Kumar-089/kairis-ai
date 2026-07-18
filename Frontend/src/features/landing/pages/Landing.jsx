@@ -63,7 +63,7 @@ const Landing = () => {
                     <span className="text-brand-400">Get real answers.</span>
                 </h1>
                 <p className="mt-5 max-w-xl text-balance text-base text-white/60 sm:text-lg">
-                    Kairis AI searches, reasons, and writes code — all in one fast, focused chat.
+                    Kairis AI is a premium, context-aware assistant with intelligent multi-model routing, smart RAG document Q&A, and fast voice input.
                 </p>
 
                 <div className="mt-9 pointer-events-auto">
