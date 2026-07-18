@@ -153,14 +153,14 @@ const Dashboard = () => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    // Check if new attachments exceed the max of 5 files total
+    
     if (attachedFiles.length + files.length > 5) {
       alert("You can only upload up to 5 files at one time.");
       event.target.value = '';
       return;
     }
 
-    // 1. Enforce 5MB single file limit and 15MB total limit
+    
     const maxSingleSize = 5 * 1024 * 1024;
     let tempTotalSize = totalUploadedSize;
 
@@ -180,7 +180,7 @@ const Dashboard = () => {
       return;
     }
 
-    // Map files to local state array with uploading status
+  
     const newFiles = files.map((f, idx) => ({
       id: Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
       file: f,
@@ -196,7 +196,7 @@ const Dashboard = () => {
     setTotalUploadedSize(tempTotalSize);
     event.target.value = '';
 
-    // Upload each file individually to ImageKit
+   =
     newFiles.forEach(async (fItem) => {
       try {
         const response = await chat.handleUploadDocument(fItem.file);
