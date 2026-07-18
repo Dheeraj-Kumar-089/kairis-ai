@@ -28,7 +28,7 @@ import {
 } from '../../../components/ui/message-scroller';
 import { markLastMessageDoneStreaming } from '../chat.slice';
 import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animation';
-import { Moon, Sun, ArrowUp, X } from 'lucide-react';
+import { Moon, Sun, ArrowUp, X, Mic } from 'lucide-react';
 import { useSidebar } from '../../../components/ui/sidebar';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { PanelLeft } from 'lucide-react';
@@ -57,6 +57,60 @@ const Dashboard = () => {
   const currentChatId = useSelector((state) => state.chat.currentChatId);
   const isLoading = useSelector((state) => state.chat.isLoading);
   const user = useSelector((state) => state.auth.user);
+
+  const [isListening, setIsListening] = useState(false);
+
+  // Setup Browser Speech Recognition API
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = useRef(SpeechRecognition ? new SpeechRecognition() : null).current;
+
+  const handleVoiceInput = () => {
+    if (!recognition) {
+      alert("Speech recognition is not supported in this browser. Please try using Google Chrome or Microsoft Edge.");
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+      return;
+    }
+
+    setIsListening(true);
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      const speechResult = event.results[0][0].transcript;
+      setChatInput((prev) => (prev ? prev + " " + speechResult : speechResult));
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const messagesCount = currentChatId ? chats[currentChatId]?.messages?.length || 0 : 0;
+  const isTooLong = messagesCount >= 30;
+  const isCapped = messagesCount >= 35;
+
+  const limitWarning = isTooLong && (
+    <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3 text-center text-sm font-medium text-orange-500">
+        {isCapped 
+          ? "Chat limit reached. This chat session is closed. Please start a new chat." 
+          : "This chat is becoming too long. Kindly switch to a new chat."
+        }
+    </div>
+  );
 
   useEffect(() => {
     chat.initializeSocketConnection();
@@ -137,7 +191,8 @@ const Dashboard = () => {
             type="button"
             onClick={removeAttachedImage}
             aria-label="Remove file"
-            className="absolute -right-2 -top-2 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black dark:bg-white/70 dark:text-black dark:hover:bg-white"
+            disabled={isCapped}
+            className="absolute -right-2 -top-2 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black dark:bg-white/70 dark:text-black dark:hover:bg-white disabled:opacity-50"
           >
             <X className="size-3" />
           </button>
@@ -148,8 +203,9 @@ const Dashboard = () => {
         type="text"
         value={chatInput}
         onChange={(event) => setChatInput(event.target.value)}
-        placeholder="Type your message..."
-        className="w-full bg-transparent text-base outline-none placeholder:text-[color:var(--text-secondary)]"
+        disabled={isCapped}
+        placeholder={isCapped ? "Chat session closed (limit reached)" : "Type your message..."}
+        className="w-full bg-transparent text-base outline-none placeholder:text-[color:var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
       />
 
       <div className="mt-3 flex items-center justify-between">
@@ -160,18 +216,35 @@ const Dashboard = () => {
           onChange={handlePickImage}
           className="hidden"
         />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          aria-label="Attach image"
-          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/10 text-[color:var(--text-secondary)] transition hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10"
-        >
-          <Plus className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isCapped}
+            aria-label="Attach image"
+            className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/10 text-[color:var(--text-secondary)] transition hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
+          >
+            <Plus className="size-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleVoiceInput}
+            disabled={isCapped}
+            aria-label="Voice prompt"
+            className={`inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition disabled:pointer-events-none disabled:opacity-50 ${
+              isListening
+                ? "border-red-500 bg-red-500/20 text-red-500 animate-pulse"
+                : "border-black/10 text-[color:var(--text-secondary)] hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10"
+            }`}
+          >
+            <Mic className="size-4" />
+          </button>
+        </div>
 
         <button
           type="submit"
-          disabled={!chatInput.trim() || isLoading}
+          disabled={!chatInput.trim() || isLoading || isCapped}
           aria-label="Send message"
           className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-400 text-zinc-950 transition hover:bg-brand-500 disabled:pointer-events-none disabled:opacity-50"
         >
@@ -393,6 +466,7 @@ const Dashboard = () => {
                   </MessageScroller>
                 </MessageScrollerProvider>
 
+                {limitWarning}
                 <div className="mb-2 md:mb-7">{promptForm}</div>
               </>
             )}

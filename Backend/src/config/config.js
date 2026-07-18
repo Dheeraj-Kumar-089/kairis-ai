@@ -59,6 +59,7 @@ export const config = {
         : [process.env.GEMINI_API_KEY].filter(Boolean),
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
     TAVILY_API_KEY: process.env.TAVILY_API_KEY,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
 
     // RAG / vector database (Pinecone)
     PINECONE_API_KEY: process.env.PINECONE_API_KEY,

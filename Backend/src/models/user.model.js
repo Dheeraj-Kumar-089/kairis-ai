@@ -32,6 +32,14 @@ const userSchema = new mongoose.Schema(
         },
         googleId: {
             type: String,
+        },
+        messageCountToday: {
+            type: Number,
+            default: 0,
+        },
+        lastMessageDate: {
+            type: Date,
+            default: Date.now,
         }
     },
     { timestamps: true }

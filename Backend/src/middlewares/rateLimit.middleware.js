@@ -5,7 +5,7 @@ const userRequestTracker = new Map();
  * @param {number} limit - Maximum allowed requests in the time window.
  * @param {number} windowMs - Time window in milliseconds.
  */
-export function rateLimiter(limit = 7, windowMs = 60000) {
+export function rateLimiter(limit = 15, windowMs = 60000) {
     return (req, res, next) => {
         const userId = req.user?.id;
         
