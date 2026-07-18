@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -163,20 +164,21 @@ const ChatMessage = ({ message, onStreamDone }) => {
             )}
 
             {/* Fullscreen Overlay Preview Lightbox */}
-            {previewImageUrl && (
+            {previewImageUrl && createPortal(
                 <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm cursor-zoom-out"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm cursor-zoom-out"
                     onClick={() => setPreviewImageUrl(null)}
                 >
                     <div className="relative max-w-[90%] max-h-[90%] flex items-center justify-center">
                         <img 
                             src={previewImageUrl} 
                             alt="Fullscreen Preview" 
-                            className="max-w-full max-h-full rounded-lg object-contain cursor-default shadow-2xl transition-transform duration-200"
+                            className="max-w-full max-h-full rounded-2xl object-contain cursor-default shadow-2xl transition-all duration-300"
                             onClick={(e) => e.stopPropagation()}
                         />
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
         </div>
