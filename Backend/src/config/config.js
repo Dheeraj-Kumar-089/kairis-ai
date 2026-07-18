@@ -54,6 +54,9 @@ export const config = {
 
     // AI providers
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_API_KEYS: process.env.GEMINI_API_KEYS 
+        ? process.env.GEMINI_API_KEYS.split(",").map(k => k.trim()).filter(Boolean)
+        : [process.env.GEMINI_API_KEY].filter(Boolean),
     MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
     TAVILY_API_KEY: process.env.TAVILY_API_KEY,
 

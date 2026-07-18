@@ -8,7 +8,7 @@ const chatRouter = Router();
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-chatRouter.post("/message", authUser, rateLimiter(15, 60000), sendMessage); 
+chatRouter.post("/message", authUser, rateLimiter(7, 60000), sendMessage); 
 
 chatRouter.post("/upload", authUser, rateLimiter(5, 60000), upload.single("file"), uploadDocument);
 
