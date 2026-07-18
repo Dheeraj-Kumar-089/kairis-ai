@@ -9,7 +9,7 @@ export function rateLimiter(limit = 15, windowMs = 60000) {
     return (req, res, next) => {
         const userId = req.user?.id;
         
-        // If the request doesn't have a user context, skip (e.g. public routes, though these are authenticated)
+
         if (!userId) {
             return next();
         }
@@ -17,7 +17,7 @@ export function rateLimiter(limit = 15, windowMs = 60000) {
         const now = Date.now();
         const userData = userRequestTracker.get(userId) || { count: 0, resetTime: now + windowMs };
 
-        // If the time window has passed, reset the counter
+     
         if (now > userData.resetTime) {
             userData.count = 1;
             userData.resetTime = now + windowMs;

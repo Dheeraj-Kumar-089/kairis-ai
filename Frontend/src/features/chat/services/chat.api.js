@@ -31,9 +31,12 @@ export const renameChat = async (chatId, title) => {
     return response.data;
 }
 
-export const uploadDocument = async (file) => {
+export const uploadDocument = async (file, chatId) => {
     const formData = new FormData();
     formData.append("file", file);
+    if (chatId) {
+        formData.append("chatId", chatId);
+    }
     const response = await api.post("api/chats/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });

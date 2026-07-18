@@ -135,6 +135,13 @@ export async function sendMessage(req, res) {
     }
 }
 
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const publicUploadsDir = path.join(__dirname, "..", "..", "public", "uploads");
+
 export async function uploadDocument(req, res) {
 
     try {
@@ -142,13 +149,29 @@ export async function uploadDocument(req, res) {
             return res.status(400).json({ message: "No file uploaded" });
         }
 
-        const { buffer, mimetype, originalname } = req.file;
+        const { buffer, mimetype, originalname, size } = req.file;
+        const { chatId } = req.body;
+
+        // Check single file size (5MB limit)
+        if (size > 5 * 1024 * 1024) {
+            return res.status(400).json({ message: "File size exceeds the 5MB limit." });
+        }
 
         const allowed = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
         if (!allowed.includes(mimetype)) {
             return res.status(400).json({ message: "Only PDF and image files (png, jpg, webp) are supported" });
         }
 
+        // Save file to backend public/uploads statically
+        if (!fs.existsSync(publicUploadsDir)) {
+            fs.mkdirSync(publicUploadsDir, { recursive: true });
+        }
+
+        const uniqueFilename = `${Date.now()}-${originalname.replace(/\s+/g, '_')}`;
+        const filePath = path.join(publicUploadsDir, uniqueFilename);
+        fs.writeFileSync(filePath, buffer);
+
+        // Process document text for Pinecone vector database
         const result = await storeDocument({
             buffer,
             mimetype,
@@ -156,8 +179,24 @@ export async function uploadDocument(req, res) {
             userId: req.user.id,
         });
 
+        // Save to MongoDB message if chatId is provided
+        const fileUrl = `/uploads/${uniqueFilename}`;
+        let fileMessage = null;
+
+        if (chatId) {
+            fileMessage = await messageModel.create({
+                chat: chatId,
+                content: `[Attachment: ${originalname}]`,
+                role: "user",
+                fileUrl,
+                fileName: originalname,
+                fileType: mimetype
+            });
+        }
+
         res.status(201).json({
             message: "Document stored successfully",
+            fileMessage,
             ...result,
         });
 

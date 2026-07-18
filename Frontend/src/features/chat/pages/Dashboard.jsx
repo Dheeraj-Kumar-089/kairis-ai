@@ -26,7 +26,7 @@ import {
   MessageScrollerItem,
   MessageScrollerButton,
 } from '../../../components/ui/message-scroller';
-import { markLastMessageDoneStreaming } from '../chat.slice';
+import { markLastMessageDoneStreaming, addNewMessage } from '../chat.slice';
 import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animation';
 import { Moon, Sun, ArrowUp, X, Mic } from 'lucide-react';
 import { useSidebar } from '../../../components/ui/sidebar';
@@ -57,6 +57,7 @@ const Dashboard = () => {
   const currentChatId = useSelector((state) => state.chat.currentChatId);
   const isLoading = useSelector((state) => state.chat.isLoading);
   const user = useSelector((state) => state.auth.user);
+  const [totalUploadedSize, setTotalUploadedSize] = useState(0);
 
   const [isListening, setIsListening] = useState(false);
 
@@ -130,16 +131,47 @@ const Dashboard = () => {
   const handlePickImage = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // 1. Enforce 5MB single file limit
+    const maxSingleSize = 5 * 1024 * 1024;
+    if (file.size > maxSingleSize) {
+      alert("File size exceeds the 5MB limit.");
+      event.target.value = '';
+      return;
+    }
+
+    // 2. Enforce 15MB total limit
+    const maxTotalSize = 15 * 1024 * 1024;
+    if (totalUploadedSize + file.size > maxTotalSize) {
+      alert("Total uploaded file size in this session cannot exceed 15MB.");
+      event.target.value = '';
+      return;
+    }
+
     if (attachedImage) URL.revokeObjectURL(attachedImage.url);
     const isImage = file.type.startsWith('image/');
     setAttachedImage({ file, url: isImage ? URL.createObjectURL(file) : null });
     event.target.value = ''; // allow re-picking the same file
 
-    // Send the file to the backend, which parses it (pdf-parse for PDFs,
-    // Gemini vision OCR for images) and stores it in the vector database.
     setUploadStatus('uploading');
     try {
-      await chat.handleUploadDocument(file);
+      const response = await chat.handleUploadDocument(file, currentChatId);
+      
+      // Update session upload total
+      setTotalUploadedSize((prev) => prev + file.size);
+
+      // Instantly dispatch the file message to Redux so it renders in the chat
+      if (response && response.fileMessage && currentChatId) {
+        dispatch(addNewMessage({
+          chatId: currentChatId,
+          content: response.fileMessage.content,
+          role: response.fileMessage.role,
+          fileUrl: response.fileMessage.fileUrl,
+          fileName: response.fileMessage.fileName,
+          fileType: response.fileMessage.fileType
+        }));
+      }
+
       setUploadStatus('done');
     } catch {
       setUploadStatus('error');

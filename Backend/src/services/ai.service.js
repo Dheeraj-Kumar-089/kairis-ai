@@ -51,7 +51,7 @@ const searchInternetTool = tool(
 );
 
 export async function generateResponse(messages, ragContext = "", chatSummary = "", modelType = "gemini") {
-  // Limit context history to the last 10 messages (5 turns of conversation) to save tokens and prevent rate limit exhaustion
+  
   const maxHistory = 10;
   const historyToUse = messages.slice(-maxHistory);
 

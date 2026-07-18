@@ -19,8 +19,15 @@ const chatSlice = createSlice({
             }
         },
         addNewMessage:(state,action)=>{
-            const { chatId,content,role,streaming}= action.payload
-            state.chats[chatId].messages.push({content,role,streaming: !!streaming})
+            const { chatId,content,role,streaming,fileUrl,fileName,fileType}= action.payload
+            state.chats[chatId].messages.push({
+                content,
+                role,
+                streaming: !!streaming,
+                fileUrl,
+                fileName,
+                fileType
+            })
         },
         addMessages:(state,action)=>{
             const {chatId,messages} = action.payload

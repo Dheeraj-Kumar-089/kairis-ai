@@ -82,6 +82,9 @@ export function useChat() {
             const formattedMessages = messages.map(msg => ({
                 content: msg.content,
                 role: msg.role,
+                fileUrl: msg.fileUrl,
+                fileName: msg.fileName,
+                fileType: msg.fileType,
             }));
 
             dispatch(addMessages({
@@ -106,8 +109,8 @@ export function useChat() {
         dispatch(renameChatTitle({ chatId, title }));
     }
 
-    async function handleUploadDocument(file) {
-        return await uploadDocument(file);
+    async function handleUploadDocument(file, chatId) {
+        return await uploadDocument(file, chatId);
     }
 
     return {

@@ -43,6 +43,11 @@ const ChatMessage = ({ message, onStreamDone }) => {
     const isUser = message.role === 'user'
     const visibleContent = useFastTypewriter(message.content, !!message.streaming, onStreamDone)
 
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+    const fileUrl = message.fileUrl 
+        ? (message.fileUrl.startsWith('http') ? message.fileUrl : `${API_BASE_URL}${message.fileUrl}`)
+        : null;
+
     return (
         <div className={`group flex w-full items-center gap-1.5 animate-fade-in-up ${isUser ? 'justify-end' : 'justify-start'}`}>
         <div
@@ -58,7 +63,26 @@ const ChatMessage = ({ message, onStreamDone }) => {
                 />
             )}
             {isUser ? (
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <div>
+                    {fileUrl && (
+                        <div className="mb-2 max-w-sm rounded-lg overflow-hidden border border-black/10 dark:border-white/15">
+                            {message.fileType?.startsWith('image/') ? (
+                                <img src={fileUrl} alt={message.fileName || "Uploaded Image"} className="max-h-60 w-full object-cover" />
+                            ) : (
+                                <div className="flex items-center gap-3 bg-black/5 dark:bg-white/5 p-3 rounded-lg">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 text-xs font-bold">PDF</div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-xs font-medium text-[color:var(--text-primary)]">{message.fileName || "document.pdf"}</p>
+                                        <a href={fileUrl} target="_blank" rel="noreferrer" className="text-xs text-brand-500 hover:underline font-semibold mt-0.5 inline-block">View / Download</a>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {message.content && !message.content.startsWith('[Attachment:') && (
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                    )}
+                </div>
             ) : (
                 <ReactMarkdown
                     components={{
