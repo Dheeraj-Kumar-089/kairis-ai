@@ -122,6 +122,7 @@ const Dashboard = () => {
   const handleSubmitMessage = (event) => {
     event.preventDefault();
     const trimmedMessage = chatInput.trim();
+    console.log("handleSubmitMessage state:", { chatInput, attachedFiles });
     if (!trimmedMessage && attachedFiles.length === 0) return;
 
     // Gather all attachments from successfully uploaded files
@@ -199,6 +200,7 @@ const Dashboard = () => {
     newFiles.forEach(async (fItem) => {
       try {
         const response = await chat.handleUploadDocument(fItem.file);
+        console.log("Upload response for file:", fItem.name, response);
         setAttachedFiles(prev => prev.map(item => 
           item.id === fItem.id 
             ? { ...item, status: 'done', fileUrl: response.fileUrl }
