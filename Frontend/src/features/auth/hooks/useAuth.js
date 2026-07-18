@@ -9,11 +9,11 @@ import { useEffect } from "react";
 export function useAuth() {
     const dispatch = useDispatch();
 
-    async function handleRegister({ email, username, password }) {
+    async function handleRegister({ email, fullname, password }) {
         try {
             dispatch(setLoading(true));   
             dispatch(setError(null))
-            const data = await register({ email, username, password }); 
+            const data = await register({ email, fullname, password }); 
             return true;
 
         } catch (error) {

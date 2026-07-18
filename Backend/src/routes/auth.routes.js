@@ -11,8 +11,7 @@ const authRouter = Router();
  * @route POST /api/auth/register
  * @desc Register a new user
  * @access Public
- * @body {username,email,password}
- * }
+ * @body {fullname,email,password}
  * 
  */
 

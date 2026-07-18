@@ -219,11 +219,11 @@ const Dashboard = () => {
           {user?.profilePic ? (
             <img
               src={user.profilePic}
-              alt={user?.username || 'Profile'}
+              alt={user?.fullname || 'Profile'}
               className="h-9 w-9 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-brand-300 via-brand-400 to-brand-600 flex items-center justify-center" >{(user?.username).charAt(0).toUpperCase()}
+            <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-brand-300 via-brand-400 to-brand-600 flex items-center justify-center" >{(user?.fullname || 'U').charAt(0).toUpperCase()}
             </div>
           )}
 
@@ -304,7 +304,7 @@ const Dashboard = () => {
                   className="h-9 w-9 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-brand-300 via-brand-400 to-brand-600 flex items-center justify-center" >{(user?.username).charAt(0).toUpperCase()}
+                <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-brand-300 via-brand-400 to-brand-600 flex items-center justify-center" >{(user?.fullname || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">

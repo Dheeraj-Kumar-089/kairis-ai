@@ -10,7 +10,7 @@ import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animati
 import { Moon, Sun } from 'lucide-react'
 
 const Register = () => {
-  const [username, setUsername] = useState('')
+  const [fullname, setFullname] = useState('')
 
   useEffect(() => {
     document.body.classList.add('no-scrollbar');
@@ -22,7 +22,7 @@ const Register = () => {
   const [password, setPassword] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
-  const isUsernameInvalid = username.length > 0 && username.length < 3;
+  const isFullnameInvalid = fullname.length > 0 && fullname.length < 3;
   const isPasswordInvalid = password.length > 0 && password.length<6;
 
   const loading = useSelector(state => state.auth.loading)
@@ -47,12 +47,12 @@ const Register = () => {
   const submitForm = async (event) => {
     event.preventDefault()
 
-    if (isUsernameInvalid || isPasswordInvalid) {
+    if (isFullnameInvalid || isPasswordInvalid) {
       return
     }
 
     const payload = {
-      username,
+      fullname,
       email,
       password,
     }
@@ -111,28 +111,28 @@ const Register = () => {
             Create Account
           </h1>
           <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
-            Register with your username, email, and password.
+            Register with your full name, email, and password.
           </p>
 
           
 
           <form onSubmit={submitForm} className="mt-8 space-y-5">
             <div>
-              <TextField className="w-full" isInvalid={isUsernameInvalid}>
-              <label htmlFor="username" className="mb-2 block text-sm font-medium">
-                Username
+              <TextField className="w-full" isInvalid={isFullnameInvalid}>
+              <label htmlFor="fullname" className="mb-2 block text-sm font-medium">
+                Full Name
               </label>
               <input
-                id="username"
+                id="fullname"
                 type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Choose a username"
+                autoComplete="name"
+                value={fullname}
+                onChange={(event) => setFullname(event.target.value)}
+                placeholder="Enter your full name"
                 required
                 className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
               />
-              <FieldError>Username must be at least 3 characters</FieldError>
+              <FieldError>Full name must be at least 3 characters</FieldError>
               </TextField>
             </div>
 
