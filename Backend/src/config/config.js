@@ -16,24 +16,16 @@ for (const key of required) {
     }
 }
 
-const sanitizeUrl = (url, defaultUrl = "") => {
-    if (!url) return defaultUrl;
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-        return `https://${url}`;
-    }
-    return url;
-};
-
 export const config = {
     // Server
     PORT: process.env.PORT || 3000,
     NODE_ENV: process.env.NODE_ENV || "development",
 
     // Origin of the frontend to redirect the browser back to..
-    FRONTEND_URL: sanitizeUrl(process.env.FRONTEND_URL),
+    FRONTEND_URL: process.env.FRONTEND_URL || "",
 
    
-    SERVER_URL: sanitizeUrl(process.env.SERVER_URL, `http://localhost:${process.env.PORT || 3000}`),
+    SERVER_URL: process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3000}`,
 
     // Database
     MONGO_URI: process.env.MONGO_URI,
