@@ -65,7 +65,7 @@ const Register = () => {
 
   if (submitted && !error) {
     return (
-      <section className="relative min-h-screen bg-[color:var(--bg-app)] px-4 py-10 text-[color:var(--text-primary)] sm:px-6 lg:px-8">
+      <main className="relative min-h-screen bg-[color:var(--bg-app)] px-4 py-10 text-[color:var(--text-primary)] sm:px-6 lg:px-8">
         <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
           <button
             ref={ref}
@@ -87,12 +87,12 @@ const Register = () => {
             </Link>
           </div>
         </div>
-      </section>
+      </main>
     )
   }
 
   return (
-    <section className="relative min-h-screen bg-[color:var(--bg-app)] px-4 py-10 text-[color:var(--text-primary)] sm:px-6 lg:px-8">
+    <main className="relative min-h-screen bg-[color:var(--bg-app)] px-4 py-10 text-[color:var(--text-primary)] sm:px-6 lg:px-8">
       <Link to="/" className="mb-6 inline-flex items-center gap-2 transition hover:opacity-85">
                         <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-brand-400 text-zinc-950 font-bold">K</div>
                         <span className="text-lg font-semibold tracking-tight">Kairis AI</span>
@@ -204,7 +204,7 @@ const Register = () => {
           </p>
         </div>
       </div>
-    </section>
+    </main>
   )
 }
 

@@ -8,12 +8,11 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 
 ### Frontend
 * **Core**: [React](https://react.dev/) + [Vite](https://vite.dev/)
-* **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [HeroUI](https://heroui.com/)
+* **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 * **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/)
 * **Routing**: [React Router](https://reactrouter.com/)
 * **Icons**: [Lucide React](https://lucide.dev/)
 * **Realtime**: [Socket.io Client](https://socket.io/docs/v4/client-api/)
-* **Animations**: Theme transition scans via `react-theme-switch-animation`
 
 ### Backend
 * **Runtime**: [Node.js](https://nodejs.org/) (ES Modules)
@@ -21,8 +20,6 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Database**: [MongoDB](https://www.mongodb.com/) (using [Mongoose](https://mongoosejs.com/))
 * **Realtime Server**: [Socket.io](https://socket.io/)
 * **Authentication**: [Passport.js](https://www.passportjs.org/) (Google OAuth 2.0 Strategy) & JWT (JSON Web Tokens)
-* **Emailing**: [Mailjet API](https://www.mailjet.com/) / [Nodemailer](https://nodemailer.com/)
-* **File Processing**: [Multer](https://github.com/expressjs/multer) & [PDF-parse](https://www.npmjs.com/package/pdf-parse)
 
 ### AI & Vector Databases (RAG)
 * **Orchestration**: [LangChain](https://js.langchain.com/)
