@@ -196,7 +196,6 @@ const Dashboard = () => {
     setTotalUploadedSize(tempTotalSize);
     event.target.value = '';
 
-   =
     newFiles.forEach(async (fItem) => {
       try {
         const response = await chat.handleUploadDocument(fItem.file);
