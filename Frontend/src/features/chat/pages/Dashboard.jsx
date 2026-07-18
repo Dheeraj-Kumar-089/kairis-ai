@@ -216,7 +216,7 @@ const Dashboard = () => {
           )}
           <span className="text-xs text-[color:var(--text-secondary)]">
             {uploadStatus === 'uploading' && 'Processing...'}
-            {uploadStatus === 'done' && 'Ready — ask about this file'}
+            {uploadStatus === 'done' && 'Ready'}
             {uploadStatus === 'error' && 'Upload failed'}
           </span>
           <button
@@ -276,7 +276,7 @@ const Dashboard = () => {
 
         <button
           type="submit"
-          disabled={!chatInput.trim() || isLoading || isCapped}
+          disabled={!chatInput.trim() || isLoading || isCapped || uploadStatus === 'uploading'}
           aria-label="Send message"
           className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-400 text-zinc-950 transition hover:bg-brand-500 disabled:pointer-events-none disabled:opacity-50"
         >
