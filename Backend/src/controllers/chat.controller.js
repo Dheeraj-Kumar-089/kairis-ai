@@ -164,6 +164,10 @@ export async function uploadDocument(req, res) {
 
         // Upload to ImageKit (CDN), with a fallback to local disk storage
         let fileUrl = "";
+        const userId = req.user.id;
+        const targetChatId = chatId || "general";
+        const folderPath = `/kairis-ai/${userId}/${targetChatId}`;
+
         try {
             const authHeader = Buffer.from(config.IMAGEKIT_PRIVATE_KEY + ":").toString("base64");
             const base64File = buffer.toString("base64");
@@ -177,7 +181,8 @@ export async function uploadDocument(req, res) {
                 body: JSON.stringify({
                     file: base64File,
                     fileName: originalname,
-                    useUniqueFileName: true
+                    useUniqueFileName: true,
+                    folder: folderPath
                 })
             });
 
