@@ -38,16 +38,16 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * Secure HTTP-only cookies designed to work cross-site in production.
 
 ### 2. Multi-Model Routing & Daily Limits
-* **Daily Message Routing**: Routes the first 20 daily messages to Gemini (Google's best models), followed by Mistral AI, and falls back to Llama 3 8B.
+* **Daily Message Routing**: Automatically routes user messages between Gemini (Google's best models), Mistral AI, and Llama 3 based on daily usage thresholds.
 * **Limit Enforcement**: Displays a friendly "limit reached for today" block if all limits are exhausted.
 
 ### 3. Thread Length Constraints & Summarization
-* **Intelligent Summarization**: Automatically condenses core topics and decisions into 3-5 paragraphs after every 12 messages, passing only the summary alongside subsequent messages to minimize token waste.
-* **Thread Life Warning**: Prompts users to switch to a new chat after 30 messages, and automatically disables send buttons after 35 messages to preserve memory.
+* **Intelligent Summarization**: Automatically condenses core topics and decisions of the chat history after a set threshold of messages, passing only the summary alongside subsequent messages to minimize token waste.
+* **Thread Life Warning**: Warns users when the active chat thread grows too long, recommending switching to a new chat, and disables messaging options once the thread limit is reached.
 
 ### 4. Advanced Multi-File Upload & Lightbox Preview
-* **Staged Attachments**: Stage up to 5 images or PDFs in a compact preview row (occupying 75% width) before sending.
-* **Upload Limits**: Limits uploads to a maximum of 5 MB per file and 15 MB in total per prompt.
+* **Staged Attachments**: Stage multiple image or PDF files in a compact preview row before sending.
+* **Upload Limits**: Restricts individual and total upload size as well as file count per prompt.
 * **Send Lock**: Automatically disables the send button until all staged uploads are finished.
 * **Fullscreen Lightbox**: Click any attachment thumbnail to open a fullscreen lightbox overlay rendered outside viewport constraints via **React Portals** (`createPortal`).
 
@@ -55,7 +55,7 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Structured Hosting**: Files are organized under `kairis-ai/<userId>/<chatId>/` paths in ImageKit.
 * **Context-Aware Routing**: Pinecone search queries are strictly matched against the `userId`, `chatId`, and the specific files attached in the **latest asked prompt** to prevent crosstalk.
 * **History Queries**: Automatically detects if the user is explicitly asking about older files (e.g. *"compare with the previous PDF"*) and expands the RAG search to all files in the current chat session.
-* **Score-Filtered Matching**: Employs similarity score thresholds (`>= 0.35`) to strip out irrelevant search noise.
+* **Score-Filtered Matching**: Employs similarity score thresholds to strip out irrelevant search noise.
 
 ### 6. Voice Prompting
 * Integrated fast voice prompt input utilizing the **Web Speech API** for hands-free queries.
