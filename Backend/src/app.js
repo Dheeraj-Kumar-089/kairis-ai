@@ -51,6 +51,10 @@ app.get("/", (req, res) => {
     });
 });
 
+app.get('/googlea97fe74f9f1f79e8.html',(req,res)=>{
+    res.send('google-site-verification: googlea97fe74f9f1f79e8.html');
+})
+
 
 //Routes
 app.use("/api/auth",authRouter);
