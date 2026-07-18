@@ -32,6 +32,9 @@ const agent = createAgent({
 });
 
 export async function generateResponse(messages, ragContext = "") {
+  // Limit context history to the last 10 messages (5 turns of conversation) to save tokens and prevent rate limit exhaustion
+  const maxHistory = 10;
+  const historyToUse = messages.slice(-maxHistory);
 
   const response = await agent.invoke({
         messages: [
@@ -43,7 +46,7 @@ export async function generateResponse(messages, ragContext = "") {
                 The user has uploaded documents. The following excerpts from those documents are the most relevant to the current question. Prefer this context when answering, and mention the source filename when you use it:
                 ${ragContext}` : ""}
             `),
-            ...(messages.map(msg => {
+            ...(historyToUse.map(msg => {
                 if (msg.role == "user") {
                     return new HumanMessage(msg.content)
                 } else if (msg.role == "ai") {

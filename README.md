@@ -104,9 +104,6 @@ GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
 GOOGLE_OAUTH_CLIENT_SECRET=your_google_oauth_client_secret
 GOOGLE_CALLBACK_URL=http://localhost:8000/api/auth/google/callback
 
-# ImageKit
-IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-
 # Mailjet
 MAILJET_API_KEY=your_mailjet_api_key
 MAILJET_API_SECRET=your_mailjet_api_secret
