@@ -51,7 +51,7 @@ Return only the extracted text and descriptions, no commentary.`,
 }
 
 // Parse (pdf or image) 
-export async function storeDocument({ buffer, mimetype, filename, userId }) {
+export async function storeDocument({ buffer, mimetype, filename, userId, chatId }) {
     const text =
         mimetype === "application/pdf"
             ? await parsePdf(buffer)
@@ -79,6 +79,7 @@ export async function storeDocument({ buffer, mimetype, filename, userId }) {
             metadata: {
                 text: doc.text,
                 userId: String(userId),
+                chatId: String(chatId || "general"),
                 filename,
             },
         })),
@@ -87,14 +88,30 @@ export async function storeDocument({ buffer, mimetype, filename, userId }) {
     return { chunks: docs.length, filename };
 }
 
-export async function queryDocuments({ query, userId, topK = 4 }) {
+export async function queryDocuments({ query, userId, chatId, filenames, topK = 4 }) {
     const queryEmbedding = await embeddings.embedQuery(query);
+
+    const filter = {
+        userId: String(userId)
+    };
+
+    if (chatId) {
+        filter.chatId = String(chatId);
+    }
+
+    if (filenames && filenames.length > 0) {
+        if (filenames.length === 1) {
+            filter.filename = filenames[0];
+        } else {
+            filter.filename = { "$in": filenames };
+        }
+    }
 
     const result = await index.query({
         vector: queryEmbedding,
         topK,
         includeMetadata: true,
-        filter: { userId: String(userId) },
+        filter: filter,
     });
 
     return (result.matches || [])

@@ -78,12 +78,45 @@ export async function sendMessage(req, res) {
         const sliceStart = Math.floor((messages.length - 1) / 12) * 12;
         const messagesToUse = messages.slice(sliceStart);
 
-        // 8. Fetch RAG Context if document uploaded
+        // 8. Determine if we should query specific files vs all files in this chat session
+        let latestFilenames = (attachments || []).map(a => a.fileName);
+
+        // If no files attached in the current prompt, look back in chat history to find the most recently uploaded files
+        if (latestFilenames.length === 0) {
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const msg = messages[i];
+                if (msg.attachments && msg.attachments.length > 0) {
+                    latestFilenames = msg.attachments.map(a => a.fileName);
+                    break;
+                }
+            }
+        }
+
+        // Detect if user is asking about previous/older files explicitly
+        const queryLower = (message || "").toLowerCase();
+        const asksForPrevious = /\b(previous|older|earlier|first|second|third|past|other|all|compare|history)\b/.test(queryLower);
+
+        // If user explicitly asks for older documents, search everything in this chat session.
+        // Otherwise, filter strictly by the latest uploaded files in this session to prevent crosstalk.
+        const searchFilenames = asksForPrevious ? null : latestFilenames;
+
+        // Fetch RAG Context from Vector DB
         let ragContext = "";
         try {
-            const matches = await queryDocuments({ query: message, userId: req.user.id });
-            ragContext = matches
-                .map((m) => `[from "${m.filename}"]\n${m.text}`)
+            const matches = await queryDocuments({ 
+                query: message, 
+                userId: req.user.id,
+                chatId: activeChatId,
+                filenames: searchFilenames 
+            });
+
+            // Tweak score filter to get the best responses and filter out irrelevant noise
+            // Similarity score is between 0.0 and 1.0 (Mistral cosine distance). A 0.35+ score is a good threshold.
+            const scoreThreshold = 0.35;
+            const qualityMatches = matches.filter(m => m.score >= scoreThreshold);
+
+            ragContext = qualityMatches
+                .map((m) => `[from "${m.filename}" (Similarity Score: ${m.score.toFixed(2)})]\n${m.text}`)
                 .join("\n---\n");
         } catch (ragError) {
             console.error("RAG query failed, continuing without context:", ragError.message);
@@ -212,6 +245,7 @@ export async function uploadDocument(req, res) {
             mimetype,
             filename: originalname,
             userId: req.user.id,
+            chatId: chatId || "general"
         });
 
         res.status(201).json({
