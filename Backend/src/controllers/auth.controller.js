@@ -115,7 +115,12 @@ export async function login(req, res) {
 
     const token = jwt.sign({ id: user._id, fullname: user.fullname }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.cookie("token", token);
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: config.NODE_ENV === "production",
+        sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     res.status(200).json({
         message: "Login successful",
@@ -134,7 +139,11 @@ export async function login(req, res) {
  * @access Private
  */
 export async function logout(req, res) {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: config.NODE_ENV === "production",
+        sameSite: config.NODE_ENV === "production" ? "none" : "lax"
+    });
 
     res.status(200).json({
         message: "Logged out successfully",
@@ -201,7 +210,12 @@ export const googleCallback = async (req, res) => {
 
     user.verified = true
     await user.save()
-    res.cookie("token", token)
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: config.NODE_ENV === "production",
+        sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    })
      
 
     res.redirect(`${config.FRONTEND_URL}/dashboard`)
