@@ -50,6 +50,7 @@ const ChatMessage = ({ message, onStreamDone }) => {
         : null;
     const attachments = message.attachments || [];
     const hasAttachments = fileUrl || attachments.length > 0;
+    console.log("ChatMessage Render:", { message, fileUrl, attachments, hasAttachments });
 
     return (
         <div className={`group flex w-full flex-col gap-1.5 animate-fade-in-up ${isUser ? 'items-end' : 'items-start'}`}>
