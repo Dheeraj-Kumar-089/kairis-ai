@@ -12,7 +12,6 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Routing**: [React Router](https://reactrouter.com/)
 * **Icons**: [Lucide React](https://lucide.dev/)
 * **Realtime**: [Socket.io Client](https://socket.io/docs/v4/client-api/)
-* **Animations**: [Framer Motion](https://www.framer.com/motion/)
 
 ### Backend
 * **Runtime**: [Node.js](https://nodejs.org/) (ES Modules)
@@ -37,8 +36,10 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * Single-click **Google OAuth Login** with automatic user provisioning.
 * Secure HTTP-only cookies designed to work cross-site in production.
 
+
 ### 2. Thread Length Constraints & Summarization
 * **Intelligent Summarization**: Automatically condenses core topics and decisions into 3-5 paragraphs to reduce the token usage
+
 
 ### 3. Advanced Multi-File Upload & Lightbox Preview
 * **Staged Attachments**: Stage up to 5 images or PDFs in a compact preview row (occupying 75% width) before sending.
