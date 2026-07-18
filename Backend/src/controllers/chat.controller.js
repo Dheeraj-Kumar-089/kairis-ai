@@ -162,14 +162,43 @@ export async function uploadDocument(req, res) {
             return res.status(400).json({ message: "Only PDF and image files (png, jpg, webp) are supported" });
         }
 
-        // Save file to backend public/uploads statically
-        if (!fs.existsSync(publicUploadsDir)) {
-            fs.mkdirSync(publicUploadsDir, { recursive: true });
-        }
+        // Upload to ImageKit (CDN), with a fallback to local disk storage
+        let fileUrl = "";
+        try {
+            const authHeader = Buffer.from(config.IMAGEKIT_PRIVATE_KEY + ":").toString("base64");
+            const base64File = buffer.toString("base64");
 
-        const uniqueFilename = `${Date.now()}-${originalname.replace(/\s+/g, '_')}`;
-        const filePath = path.join(publicUploadsDir, uniqueFilename);
-        fs.writeFileSync(filePath, buffer);
+            const uploadResponse = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Basic ${authHeader}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    file: base64File,
+                    fileName: originalname,
+                    useUniqueFileName: true
+                })
+            });
+
+            if (!uploadResponse.ok) {
+                const errText = await uploadResponse.text();
+                throw new Error(`ImageKit response status ${uploadResponse.status}: ${errText}`);
+            }
+
+            const uploadData = await uploadResponse.json();
+            fileUrl = uploadData.url;
+            console.log("Successfully uploaded document to ImageKit:", fileUrl);
+        } catch (imgKitErr) {
+            console.error("ImageKit upload failed, falling back to local storage:", imgKitErr.message);
+            if (!fs.existsSync(publicUploadsDir)) {
+                fs.mkdirSync(publicUploadsDir, { recursive: true });
+            }
+            const uniqueFilename = `${Date.now()}-${originalname.replace(/\s+/g, '_')}`;
+            const filePath = path.join(publicUploadsDir, uniqueFilename);
+            fs.writeFileSync(filePath, buffer);
+            fileUrl = `/uploads/${uniqueFilename}`;
+        }
 
         // Process document text for Pinecone vector database
         const result = await storeDocument({
@@ -179,8 +208,7 @@ export async function uploadDocument(req, res) {
             userId: req.user.id,
         });
 
-        // Save to MongoDB message if chatId is provided
-        const fileUrl = `/uploads/${uniqueFilename}`;
+        
         let fileMessage = null;
 
         if (chatId) {

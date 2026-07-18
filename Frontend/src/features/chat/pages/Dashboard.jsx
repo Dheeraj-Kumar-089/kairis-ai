@@ -51,7 +51,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [chatInput, setChatInput] = useState('');
   const [attachedImage, setAttachedImage] = useState(null); // { file, url }
-  const [uploadStatus, setUploadStatus] = useState(null); // null | 'uploading' | 'done' | 'error'
+  const [uploadStatus, setUploadStatus] = useState(null); 
   const fileInputRef = useRef(null);
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
@@ -132,7 +132,7 @@ const Dashboard = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // 1. Enforce 5MB single file limit
+    
     const maxSingleSize = 5 * 1024 * 1024;
     if (file.size > maxSingleSize) {
       alert("File size exceeds the 5MB limit.");
@@ -140,7 +140,7 @@ const Dashboard = () => {
       return;
     }
 
-    // 2. Enforce 15MB total limit
+   
     const maxTotalSize = 15 * 1024 * 1024;
     if (totalUploadedSize + file.size > maxTotalSize) {
       alert("Total uploaded file size in this session cannot exceed 15MB.");
