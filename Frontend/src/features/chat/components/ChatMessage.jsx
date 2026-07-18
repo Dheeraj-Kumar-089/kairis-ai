@@ -64,7 +64,8 @@ const ChatMessage = ({ message, onStreamDone }) => {
             )}
             {isUser ? (
                 <div>
-                    {fileUrl && (
+                    {/* Render legacy single fileUrl if present */}
+                    {fileUrl && (!message.attachments || !message.attachments.some(a => a.fileUrl === message.fileUrl)) && (
                         <div className="mb-2 max-w-sm rounded-lg overflow-hidden border border-black/10 dark:border-white/15">
                             {message.fileType?.startsWith('image/') ? (
                                 <img src={fileUrl} alt={message.fileName || "Uploaded Image"} className="max-h-60 w-full object-cover" />
@@ -79,7 +80,33 @@ const ChatMessage = ({ message, onStreamDone }) => {
                             )}
                         </div>
                     )}
-                    {message.content && !message.content.startsWith('[Attachment:') && (
+
+                    {/* Render new multiple attachments */}
+                    {message.attachments && message.attachments.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-2 max-w-full">
+                            {message.attachments.map((att, idx) => {
+                                const attUrl = att.fileUrl.startsWith('http') ? att.fileUrl : `${API_BASE_URL}${att.fileUrl}`;
+                                const isImg = att.fileType?.startsWith('image/');
+                                return (
+                                    <div key={idx} className="rounded-lg overflow-hidden border border-black/10 dark:border-white/15 max-w-[150px] shrink-0">
+                                        {isImg ? (
+                                            <img src={attUrl} alt={att.fileName} className="h-24 w-24 object-cover" />
+                                        ) : (
+                                            <div className="flex items-center gap-2 bg-black/5 dark:bg-white/5 p-2 rounded-lg text-xs h-24 w-32">
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-red-500/10 text-red-500 font-bold text-[10px]">PDF</div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate font-medium text-[10px] text-[color:var(--text-primary)]">{att.fileName}</p>
+                                                    <a href={attUrl} target="_blank" rel="noreferrer" className="text-[9px] text-brand-500 hover:underline block mt-1">Download</a>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {message.content && !message.content.startsWith('[Attachment:') && message.content !== '[Attachment]' && (
                         <p className="whitespace-pre-wrap">{message.content}</p>
                     )}
                 </div>

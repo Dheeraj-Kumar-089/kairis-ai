@@ -1,10 +1,10 @@
 import { api } from "../../auth/services/auth.api.js"
 
 
-export const sendMessage = async ({message,chatId}) => {
+export const sendMessage = async ({message,chatId,attachments}) => {
 
     const response = await api.post("api/chats/message",{
-        message,chat: chatId
+        message,chat: chatId,attachments
     })
 
     return response.data;

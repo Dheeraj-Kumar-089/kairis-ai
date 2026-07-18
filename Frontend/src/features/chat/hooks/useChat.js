@@ -7,14 +7,14 @@ import { setChats, setCurrentChatId, setError, setLoading, createNewChat, addNew
 export function useChat() {
     const dispatch = useDispatch();
 
-    async function handleSendMessage({ message, chatId }) {
+    async function handleSendMessage({ message, chatId, attachments = [] }) {
         const isNewChat = !chatId;
         const activeChatId = isNewChat ? "temp-chat-id" : chatId;
 
         if (isNewChat) {
             dispatch(createNewChat({
                 chatId: activeChatId,
-                title: message,
+                title: message || "New Chat",
             }));
             dispatch(setCurrentChatId(activeChatId));
         }
@@ -24,11 +24,12 @@ export function useChat() {
             chatId: activeChatId,
             content: message,
             role: "user",
+            attachments: attachments
         }));
 
         dispatch(setLoading(true));
         try {
-            const data = await sendMessage({ message, chatId: isNewChat ? null : chatId });
+            const data = await sendMessage({ message, chatId: isNewChat ? null : chatId, attachments });
             const { chat, aiMessage } = data;
 
             if (isNewChat) {

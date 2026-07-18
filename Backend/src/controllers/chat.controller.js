@@ -6,7 +6,7 @@ import userModel from "../models/user.model.js";
 
 
 export async function sendMessage(req, res) {
-    const { message, chat: chatId } = req.body;
+    const { message, chat: chatId, attachments } = req.body;
     let title = null, chat = null;
 
     try {
@@ -39,8 +39,9 @@ export async function sendMessage(req, res) {
         // 3. Create User Message
         const userMessage = await messageModel.create({
             chat: activeChatId,
-            content: message,
-            role: "user"
+            content: message || "[Attachment]",
+            role: "user",
+            attachments: attachments || []
         });
 
         // 4. Fetch all messages in this conversation
@@ -213,23 +214,11 @@ export async function uploadDocument(req, res) {
             userId: req.user.id,
         });
 
-        
-        let fileMessage = null;
-
-        if (chatId) {
-            fileMessage = await messageModel.create({
-                chat: chatId,
-                content: `[Attachment: ${originalname}]`,
-                role: "user",
-                fileUrl,
-                fileName: originalname,
-                fileType: mimetype
-            });
-        }
-
         res.status(201).json({
             message: "Document stored successfully",
-            fileMessage,
+            fileUrl,
+            fileName: originalname,
+            fileType: mimetype,
             ...result,
         });
 

@@ -50,8 +50,7 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [chatInput, setChatInput] = useState('');
-  const [attachedImage, setAttachedImage] = useState(null); // { file, url }
-  const [uploadStatus, setUploadStatus] = useState(null); 
+  const [attachedFiles, setAttachedFiles] = useState([]); // Array of { id, file, url, name, size, type, status, fileUrl }
   const fileInputRef = useRef(null);
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
@@ -103,6 +102,7 @@ const Dashboard = () => {
   const messagesCount = currentChatId ? chats[currentChatId]?.messages?.length || 0 : 0;
   const isTooLong = messagesCount >= 30;
   const isCapped = messagesCount >= 35;
+  const isUploadingFiles = attachedFiles.some(f => f.status === 'uploading');
 
   const limitWarning = isTooLong && (
     <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3 text-center text-sm font-medium text-orange-500">
@@ -122,66 +122,107 @@ const Dashboard = () => {
   const handleSubmitMessage = (event) => {
     event.preventDefault();
     const trimmedMessage = chatInput.trim();
-    if (!trimmedMessage) return;
-    chat.handleSendMessage({ message: trimmedMessage, chatId: currentChatId });
+    if (!trimmedMessage && attachedFiles.length === 0) return;
+
+    // Gather all attachments from successfully uploaded files
+    const attachments = attachedFiles
+      .filter(f => f.status === 'done')
+      .map(f => ({
+        fileUrl: f.fileUrl,
+        fileName: f.name,
+        fileType: f.type
+      }));
+
+    chat.handleSendMessage({ 
+      message: trimmedMessage, 
+      chatId: currentChatId, 
+      attachments 
+    });
+
     setChatInput('');
-    removeAttachedImage();
+    
+    // Clear staging area files
+    attachedFiles.forEach(f => {
+      if (f.url) URL.revokeObjectURL(f.url);
+    });
+    setAttachedFiles([]);
+    setTotalUploadedSize(0);
   };
 
   const handlePickImage = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
-    
+    // Check if new attachments exceed the max of 5 files total
+    if (attachedFiles.length + files.length > 5) {
+      alert("You can only upload up to 5 files at one time.");
+      event.target.value = '';
+      return;
+    }
+
+    // 1. Enforce 5MB single file limit and 15MB total limit
     const maxSingleSize = 5 * 1024 * 1024;
-    if (file.size > maxSingleSize) {
-      alert("File size exceeds the 5MB limit.");
-      event.target.value = '';
-      return;
-    }
+    let tempTotalSize = totalUploadedSize;
 
-   
-    const maxTotalSize = 15 * 1024 * 1024;
-    if (totalUploadedSize + file.size > maxTotalSize) {
-      alert("Total uploaded file size in this session cannot exceed 15MB.");
-      event.target.value = '';
-      return;
-    }
-
-    if (attachedImage) URL.revokeObjectURL(attachedImage.url);
-    const isImage = file.type.startsWith('image/');
-    setAttachedImage({ file, url: isImage ? URL.createObjectURL(file) : null });
-    event.target.value = ''; // allow re-picking the same file
-
-    setUploadStatus('uploading');
-    try {
-      const response = await chat.handleUploadDocument(file, currentChatId);
-      
-      // Update session upload total
-      setTotalUploadedSize((prev) => prev + file.size);
-
-      // Instantly dispatch the file message to Redux so it renders in the chat
-      if (response && response.fileMessage && currentChatId) {
-        dispatch(addNewMessage({
-          chatId: currentChatId,
-          content: response.fileMessage.content,
-          role: response.fileMessage.role,
-          fileUrl: response.fileMessage.fileUrl,
-          fileName: response.fileMessage.fileName,
-          fileType: response.fileMessage.fileType
-        }));
+    for (const f of files) {
+      if (f.size > maxSingleSize) {
+        alert(`File "${f.name}" exceeds the 5MB single file size limit.`);
+        event.target.value = '';
+        return;
       }
-
-      setUploadStatus('done');
-    } catch {
-      setUploadStatus('error');
+      tempTotalSize += f.size;
     }
+
+    const maxTotalSize = 15 * 1024 * 1024;
+    if (tempTotalSize > maxTotalSize) {
+      alert("Total uploaded file size exceeds the 15MB limit.");
+      event.target.value = '';
+      return;
+    }
+
+    // Map files to local state array with uploading status
+    const newFiles = files.map((f, idx) => ({
+      id: Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
+      file: f,
+      url: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
+      name: f.name,
+      size: f.size,
+      type: f.type,
+      status: 'uploading',
+      fileUrl: null
+    }));
+
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+    setTotalUploadedSize(tempTotalSize);
+    event.target.value = '';
+
+    // Upload each file individually to ImageKit
+    newFiles.forEach(async (fItem) => {
+      try {
+        const response = await chat.handleUploadDocument(fItem.file);
+        setAttachedFiles(prev => prev.map(item => 
+          item.id === fItem.id 
+            ? { ...item, status: 'done', fileUrl: response.fileUrl }
+            : item
+        ));
+      } catch (err) {
+        console.error("Failed to upload file:", fItem.name, err);
+        setAttachedFiles(prev => prev.map(item => 
+          item.id === fItem.id 
+            ? { ...item, status: 'error' }
+            : item
+        ));
+      }
+    });
   };
 
-  const removeAttachedImage = () => {
-    if (attachedImage?.url) URL.revokeObjectURL(attachedImage.url);
-    setAttachedImage(null);
-    setUploadStatus(null);
+  const removeAttachedFile = (fileId) => {
+    const fileToRemove = attachedFiles.find(f => f.id === fileId);
+    if (!fileToRemove) return;
+
+    if (fileToRemove.url) URL.revokeObjectURL(fileToRemove.url);
+    setAttachedFiles(prev => prev.filter(f => f.id !== fileId));
+    setTotalUploadedSize(prev => Math.max(0, prev - fileToRemove.size));
   };
 
   const openChat = (chatId) => chat.handleOpenChat(chatId, chats);
@@ -201,33 +242,45 @@ const Dashboard = () => {
       onSubmit={handleSubmitMessage}
       className="w-full rounded-3xl border border-black/10 dark:border-white/15 bg-[color:var(--bg-surface)] px-4 pb-3 pt-4 transition focus-within:border-brand-400"
     >
-      {attachedImage && (
-        <div className="relative mb-3 flex w-fit items-center gap-2">
-          {attachedImage.url ? (
-            <img
-              src={attachedImage.url}
-              alt="Attached"
-              className="h-16 w-16 rounded-xl border border-black/10 object-cover dark:border-white/15"
-            />
-          ) : (
-            <div className="flex h-16 items-center rounded-xl border border-black/10 px-3 text-sm text-[color:var(--text-secondary)] dark:border-white/15">
-              {attachedImage.file.name}
-            </div>
-          )}
-          <span className="text-xs text-[color:var(--text-secondary)]">
-            {uploadStatus === 'uploading' && 'Processing...'}
-            {uploadStatus === 'done' && 'Ready'}
-            {uploadStatus === 'error' && 'Upload failed'}
-          </span>
-          <button
-            type="button"
-            onClick={removeAttachedImage}
-            aria-label="Remove file"
-            disabled={isCapped}
-            className="absolute -right-2 -top-2 inline-flex size-5 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black dark:bg-white/70 dark:text-black dark:hover:bg-white disabled:opacity-50"
-          >
-            <X className="size-3" />
-          </button>
+      {attachedFiles.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2 max-w-[75%] border-b border-black/5 dark:border-white/5 pb-3">
+          {attachedFiles.map((fileItem) => {
+            const isImg = fileItem.type.startsWith('image/');
+            return (
+              <div key={fileItem.id} className="relative group/thumb rounded-xl border border-black/10 dark:border-white/15 overflow-hidden w-20 h-20 flex flex-col items-center justify-center bg-black/5 dark:bg-white/5">
+                {isImg ? (
+                  <img src={fileItem.url} alt={fileItem.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center p-1 w-full h-full">
+                    <div className="text-red-500 font-bold text-xs">PDF</div>
+                    <div className="text-[9px] truncate w-full px-1 text-[color:var(--text-secondary)]">{fileItem.name}</div>
+                  </div>
+                )}
+                
+                {/* Uploading indicator */}
+                {fileItem.status === 'uploading' && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-[10px] text-white font-medium">
+                    Loading...
+                  </div>
+                )}
+                
+                {fileItem.status === 'error' && (
+                  <div className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-[10px] text-white font-medium">
+                    Failed
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => removeAttachedFile(fileItem.id)}
+                  aria-label="Remove file"
+                  className="absolute top-1 right-1 opacity-100 md:opacity-0 group-hover/thumb:opacity-100 transition inline-flex size-4 items-center justify-center rounded-full bg-black/70 text-white dark:bg-white/70 dark:text-black hover:bg-black dark:hover:bg-white"
+                >
+                  <X className="size-2.5" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -244,6 +297,7 @@ const Dashboard = () => {
         <input
           ref={fileInputRef}
           type="file"
+          multiple
           accept="image/png,image/jpeg,image/webp,application/pdf"
           onChange={handlePickImage}
           className="hidden"
@@ -252,7 +306,7 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isCapped}
+            disabled={isCapped || attachedFiles.length >= 5}
             aria-label="Attach image"
             className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/10 text-[color:var(--text-secondary)] transition hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
           >
@@ -276,7 +330,7 @@ const Dashboard = () => {
 
         <button
           type="submit"
-          disabled={!chatInput.trim() || isLoading || isCapped || uploadStatus === 'uploading'}
+          disabled={(!chatInput.trim() && attachedFiles.length === 0) || isLoading || isCapped || isUploadingFiles}
           aria-label="Send message"
           className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-400 text-zinc-950 transition hover:bg-brand-500 disabled:pointer-events-none disabled:opacity-50"
         >
