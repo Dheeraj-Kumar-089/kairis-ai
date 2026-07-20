@@ -1,5 +1,6 @@
 import { generateResponse, generateChatTitle, generateSummary } from "../services/ai.service.js";
 import { storeDocument, queryDocuments } from "../services/rag.service.js";
+import { uploadFile } from "../services/storage.service.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import userModel from "../models/user.model.js";
@@ -201,30 +202,12 @@ export async function uploadDocument(req, res) {
         const folderPath = `/kairis-ai/${userId}/${targetChatId}`;
 
         try {
-            const authHeader = Buffer.from(config.IMAGEKIT_PRIVATE_KEY + ":").toString("base64");
-            const base64File = buffer.toString("base64");
-
-            const uploadResponse = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Basic ${authHeader}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    file: base64File,
-                    fileName: originalname,
-                    useUniqueFileName: true,
-                    folder: folderPath
-                })
+            const uploadResult = await uploadFile({
+                buffer,
+                fileName: originalname,
+                folder: folderPath
             });
-
-            if (!uploadResponse.ok) {
-                const errText = await uploadResponse.text();
-                throw new Error(`ImageKit response status ${uploadResponse.status}: ${errText}`);
-            }
-
-            const uploadData = await uploadResponse.json();
-            fileUrl = uploadData.url;
+            fileUrl = uploadResult.url;
             console.log("Successfully uploaded document to ImageKit:", fileUrl);
         } catch (imgKitErr) {
             console.error("ImageKit upload failed, falling back to local storage:", imgKitErr.message);
