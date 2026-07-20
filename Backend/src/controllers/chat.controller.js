@@ -109,7 +109,7 @@ export async function sendMessage(req, res) {
             });
 
 
-            const scoreThreshold = 0.35;
+            const scoreThreshold = (searchFilenames && searchFilenames.length > 0) ? 0.0 : 0.35;
             const qualityMatches = matches.filter(m => m.score >= scoreThreshold);
 
             ragContext = qualityMatches

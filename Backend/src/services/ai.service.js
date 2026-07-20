@@ -45,7 +45,9 @@ const searchInternetTool = tool(
     name: "searchInternet",
     description: "Use this tool to get the latest information from the internet.",
     schema: z.object({
-      query: z.string().describe("The search query to look up on the internet.")
+      query: z.string().describe("The search query to look up on the internet."),
+      topic: z.enum(["general", "news"]).optional().describe("The search topic. Use 'news' for recent events, current affairs, sports results, and news. Use 'general' for search on other topics. Defaults to 'general'."),
+      timeRange: z.enum(["day", "week", "month", "year"]).optional().describe("The time range for the search. Particularly useful for 'news' topic to filter by recency (e.g. 'day' for today's news). Defaults to 'month' for news.")
     })
   }
 );
@@ -62,12 +64,20 @@ export async function generateResponse(messages, ragContext = "", chatSummary = 
       tools: [searchInternetTool],
   });
 
+  const currentDate = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'full',
+      timeStyle: 'long'
+  });
+
   const response = await agent.invoke({
         messages: [
             new SystemMessage(`
                 You are a helpful and precise assistant for answering questions.
                 If you don't know the answer, say you don't know.
                 If the question requires up-to-date information, use the "searchInternet" tool to get the latest information from the internet and then answer based on the search results.
+                
+                Current Date and Time: ${currentDate}
                 
                 ${chatSummary ? `
                 Here is a summary of the older messages in this conversation:
