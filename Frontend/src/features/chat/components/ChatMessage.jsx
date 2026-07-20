@@ -67,7 +67,21 @@ const ChatMessage = ({ message, onStreamDone }) => {
                             }`}
                         >
                             {message.fileType?.startsWith('image/') ? (
-                                <img src={fileUrl} alt={message.fileName || "Uploaded Image"} className="w-full h-full object-cover" />
+                                <>
+                                    <img
+                                        src={fileUrl}
+                                        alt={message.fileName || "Uploaded Image"}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                            e.currentTarget.nextSibling.style.display = 'flex';
+                                        }}
+                                    />
+                                    <div className="hidden w-full h-full flex-col items-center justify-center text-center p-1 text-[9px] text-[color:var(--text-secondary)]">
+                                        <div className="text-lg">🖼️</div>
+                                        <div className="truncate w-full px-1">Image unavailable</div>
+                                    </div>
+                                </>
                             ) : (
                                 <div className="flex flex-col items-center justify-center text-center p-1 w-full h-full text-[10px]">
                                     <div className="text-red-500 font-bold">PDF</div>
@@ -91,7 +105,21 @@ const ChatMessage = ({ message, onStreamDone }) => {
                                 }`}
                             >
                                 {isImg ? (
-                                    <img src={attUrl} alt={att.fileName} className="w-full h-full object-cover" />
+                                    <>
+                                        <img
+                                            src={attUrl}
+                                            alt={att.fileName}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.nextSibling.style.display = 'flex';
+                                            }}
+                                        />
+                                        <div className="hidden w-full h-full flex-col items-center justify-center text-center p-1 text-[9px] text-[color:var(--text-secondary)]">
+                                            <div className="text-lg">🖼️</div>
+                                            <div className="truncate w-full px-1">Image unavailable</div>
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center text-center p-1 w-full h-full text-[10px]">
                                         <div className="text-red-500 font-bold text-xs">PDF</div>
