@@ -198,7 +198,7 @@ const Dashboard = () => {
 
     newFiles.forEach(async (fItem) => {
       try {
-        const response = await chat.handleUploadDocument(fItem.file);
+        const response = await chat.handleUploadDocument(fItem.file, currentChatId);
         setAttachedFiles(prev => prev.map(item => 
           item.id === fItem.id 
             ? { ...item, status: 'done', fileUrl: response.fileUrl }

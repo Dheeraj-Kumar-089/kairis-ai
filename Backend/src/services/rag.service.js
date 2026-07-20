@@ -4,6 +4,7 @@ import { MistralAIEmbeddings } from "@langchain/mistralai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "langchain";
+import { config } from "../config/config.js";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index(process.env.PINECONE_INDEX || "cohort-2-rag");
@@ -18,10 +19,6 @@ const splitter = new RecursiveCharacterTextSplitter({
     chunkOverlap: 0,
 });
 
-const visionModel = new ChatGoogleGenerativeAI({
-    model: "gemini-3.1-flash-lite",
-    apiKey: process.env.GEMINI_API_KEY,
-});
 
 async function parsePdf(buffer) {
     const parser = new PDFParse({ data: buffer });
@@ -30,6 +27,16 @@ async function parsePdf(buffer) {
 }
 
 async function parseImage(buffer, mimetype) {
+    const keys = config.GEMINI_API_KEYS || [];
+    const apiKey = keys.length > 0 ? keys[0] : (config.GEMINI_API_KEY || "");
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY is not configured for image OCR");
+    }
+
+    const visionModel = new ChatGoogleGenerativeAI({
+        model: "gemini-3.1-flash-lite",
+        apiKey: apiKey,
+    });
 
     const response = await visionModel.invoke([
         new HumanMessage({
@@ -96,7 +103,13 @@ export async function queryDocuments({ query, userId, chatId, filenames, topK = 
     };
 
     if (chatId) {
-        filter.chatId = String(chatId);
+        // Match the active chat, but also fall back to "general" so
+        // documents uploaded before a chat existed (chatId was unset at
+        // upload time and got stored as "general") are still retrievable.
+        const chatIdStr = String(chatId);
+        filter.chatId = chatIdStr === "general"
+            ? chatIdStr
+            : { "$in": [chatIdStr, "general"] };
     }
 
     if (filenames && filenames.length > 0) {

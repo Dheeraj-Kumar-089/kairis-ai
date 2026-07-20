@@ -3,6 +3,7 @@ import { storeDocument, queryDocuments } from "../services/rag.service.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import userModel from "../models/user.model.js";
+import { config } from "../config/config.js";
 
 
 export async function sendMessage(req, res) {

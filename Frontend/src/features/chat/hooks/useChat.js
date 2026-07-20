@@ -86,6 +86,7 @@ export function useChat() {
                 fileUrl: msg.fileUrl,
                 fileName: msg.fileName,
                 fileType: msg.fileType,
+                attachments: msg.attachments || [],
             }));
 
             dispatch(addMessages({
