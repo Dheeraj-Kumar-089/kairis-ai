@@ -18,8 +18,9 @@ export function KineticTextLoader({
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
         
         @keyframes ktl-dotMove {
-          0%, 100% { transform: rotate(180deg) translate(-80px, -10px) rotate(-180deg); }
+          0% { transform: rotate(180deg) translate(-80px, -10px) rotate(-180deg); }
           50% { transform: rotate(0deg) translate(-81px, 10px) rotate(0deg); }
+          100% { transform: rotate(180deg) translate(-80px, -10px) rotate(-180deg); }
         }
         @keyframes ktl-letterStretch {
           0%, 100% { transform: scale(1, 0.35); transform-origin: 100% 75%; }

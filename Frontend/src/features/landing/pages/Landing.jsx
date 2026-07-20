@@ -4,10 +4,20 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router";
 import { GravityStarsBackground } from '@/components/animate-ui/components/backgrounds/gravity-stars';
 import AnimatedButton from "../../../components/ui/animated-button";
+import KineticTextLoader from "../../../components/ui/kinetic-text-loader";
 
 const Landing = () => {
     const user = useSelector((state) => state.auth.user);
     const loading = useSelector((state) => state.auth.loading);
+    const sessionChecked = useSelector((state) => state.auth.sessionChecked);
+
+    if (!sessionChecked || loading) {
+        return (
+            <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#07090f] text-white">
+                <KineticTextLoader text="LOADING" />
+            </div>
+        );
+    }
 
     return (
         <div className="dark relative min-h-screen w-full overflow-hidden bg-[#07090f] text-white">

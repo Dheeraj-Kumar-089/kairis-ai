@@ -149,25 +149,20 @@ const Dashboard = () => {
     setTotalUploadedSize(0);
   };
 
-  const handlePickImage = async (event) => {
-    const files = Array.from(event.target.files || []);
+  const processFiles = (files) => {
     if (files.length === 0) return;
 
-    
     if (attachedFiles.length + files.length > 5) {
       alert("You can only upload up to 5 files at one time.");
-      event.target.value = '';
       return;
     }
 
-    
     const maxSingleSize = 5 * 1024 * 1024;
     let tempTotalSize = totalUploadedSize;
 
     for (const f of files) {
       if (f.size > maxSingleSize) {
         alert(`File "${f.name}" exceeds the 5MB single file size limit.`);
-        event.target.value = '';
         return;
       }
       tempTotalSize += f.size;
@@ -176,11 +171,9 @@ const Dashboard = () => {
     const maxTotalSize = 15 * 1024 * 1024;
     if (tempTotalSize > maxTotalSize) {
       alert("Total uploaded file size exceeds the 15MB limit.");
-      event.target.value = '';
       return;
     }
 
-  
     const newFiles = files.map((f, idx) => ({
       id: Date.now() + '-' + idx + '-' + Math.random().toString(36).substr(2, 4),
       file: f,
@@ -194,25 +187,45 @@ const Dashboard = () => {
 
     setAttachedFiles(prev => [...prev, ...newFiles]);
     setTotalUploadedSize(tempTotalSize);
-    event.target.value = '';
 
     newFiles.forEach(async (fItem) => {
       try {
         const response = await chat.handleUploadDocument(fItem.file, currentChatId);
-        setAttachedFiles(prev => prev.map(item => 
-          item.id === fItem.id 
+        setAttachedFiles(prev => prev.map(item =>
+          item.id === fItem.id
             ? { ...item, status: 'done', fileUrl: response.fileUrl }
             : item
         ));
       } catch (err) {
         console.error("Failed to upload file:", fItem.name, err);
-        setAttachedFiles(prev => prev.map(item => 
-          item.id === fItem.id 
+        setAttachedFiles(prev => prev.map(item =>
+          item.id === fItem.id
             ? { ...item, status: 'error' }
             : item
         ));
       }
     });
+  };
+
+  const handlePickImage = async (event) => {
+    const files = Array.from(event.target.files || []);
+    processFiles(files);
+    event.target.value = '';
+  };
+
+  const ALLOWED_PASTE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
+
+  const handlePasteFiles = (event) => {
+    const items = Array.from(event.clipboardData?.items || []);
+    const files = items
+      .filter((item) => item.kind === 'file' && ALLOWED_PASTE_TYPES.includes(item.type))
+      .map((item) => item.getAsFile())
+      .filter(Boolean);
+
+    if (files.length === 0) return; // let normal text paste proceed
+
+    event.preventDefault();
+    processFiles(files);
   };
 
   const removeAttachedFile = (fileId) => {
@@ -287,6 +300,7 @@ const Dashboard = () => {
         type="text"
         value={chatInput}
         onChange={(event) => setChatInput(event.target.value)}
+        onPaste={handlePasteFiles}
         disabled={isCapped}
         placeholder={isCapped ? "Chat session closed (limit reached)" : "Type your message..."}
         className="w-full bg-transparent text-base outline-none placeholder:text-[color:var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
