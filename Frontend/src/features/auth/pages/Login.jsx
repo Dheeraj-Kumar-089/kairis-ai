@@ -8,7 +8,8 @@ import KineticTextLoader from '../../../components/ui/kinetic-text-loader'
 import AnimatedButton from '../../../components/ui/animated-button'
 import GoogleSignInButton from '../../../components/ui/google-signin-button'
 import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animation'
-import { Moon, Sun } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 
 const Login = () => {
@@ -18,6 +19,7 @@ const Login = () => {
 
     const [ email, setEmail ] = useState('')
     const [ password, setPassword ] = useState('')
+    const [showPassword, setShowPassword] = useState(false);
 
     const { handleLogin } = useAuth()
     const navigate = useNavigate()
@@ -117,9 +119,10 @@ const Login = () => {
                             <label htmlFor="password" className="mb-2 block text-sm font-medium">
                                 Password
                             </label>
+                        <div className='relative flex items-center'>
                             <input
                                 id="password"
-                                type="password"
+                                type={showPassword?'text':'password'}
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(event) => setPassword(event.target.value)}
@@ -127,6 +130,20 @@ const Login = () => {
                                 required
                                 className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
                             />
+
+                            <button
+                            type='button'
+                            onClick={()=>setShowPassword(!showPassword)}
+                            className='absolute right-3 text-gray-400 hover:text-gray-600 focus:outline-none'
+                            aria-label={showPassword?'Hide password':'Show password'}
+                            >
+                                {showPassword?(
+                                    <EyeOff className='h-5 w-5' aria-hidden='true'/>
+                                ):(
+                                    <Eye className='h-5 w-5' aria-hidden='true'/>
+                                )}
+                            </button>
+                            </div>
                         </div>
 
                         {isVerified && (

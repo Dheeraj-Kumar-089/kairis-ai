@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from 'react'
-import {FieldError,TextField} from "@heroui/react"
-import { Link } from 'react-router'
-import { useSelector } from 'react-redux'
-import { useAuth } from '../hooks/useAuth'
-import KineticTextLoader from '../../../components/ui/kinetic-text-loader'
-import AnimatedButton from '../../../components/ui/animated-button'
-import GoogleSignInButton from '../../../components/ui/google-signin-button'
-import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animation'
-import { Moon, Sun } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { FieldError, TextField } from "@heroui/react";
+import { Link } from 'react-router';
+import { useSelector } from 'react-redux';
+import { useAuth } from '../hooks/useAuth';
+import KineticTextLoader from '../../../components/ui/kinetic-text-loader';
+import AnimatedButton from '../../../components/ui/animated-button';
+import GoogleSignInButton from '../../../components/ui/google-signin-button';
+import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animation';
+import { Moon, Sun } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Register = () => {
-  const [fullname, setFullname] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [fullname, setFullname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { handleRegister } = useAuth()
+  const { handleRegister } = useAuth();
   const { ref, toggleSwitchTheme, isDarkMode } = useModeAnimation({
     animationType: ThemeAnimationType.QR_SCAN,
     duration: 700,
-  })
+  });
 
   useEffect(() => {
     document.body.classList.add('no-scrollbar');
@@ -29,38 +31,38 @@ const Register = () => {
   }, []);
 
   const isFullnameInvalid = fullname.length > 0 && fullname.length < 3;
-  const isPasswordInvalid = password.length > 0 && password.length<6;
+  const isPasswordInvalid = password.length > 0 && password.length < 6;
 
-  const loading = useSelector(state => state.auth.loading)
-  const error = useSelector(state => state.auth.error)
-  const sessionChecked = useSelector(state => state.auth.sessionChecked)
+  const loading = useSelector(state => state.auth.loading);
+  const error = useSelector(state => state.auth.error);
+  const sessionChecked = useSelector(state => state.auth.sessionChecked);
 
   if (!sessionChecked) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[color:var(--bg-app)] text-[color:var(--text-primary)]">
         <KineticTextLoader text="LOADING" />
       </div>
-    )
+    );
   }
 
   const submitForm = async (event) => {
-    event.preventDefault()
+    event.preventDefault();
 
     if (isFullnameInvalid || isPasswordInvalid) {
-      return
+      return;
     }
 
     const payload = {
       fullname,
       email,
       password,
-    }
+    };
 
-    const success = await handleRegister(payload)
+    const success = await handleRegister(payload);
     if (success) {
-      setSubmitted(true)
+      setSubmitted(true);
     }
-  }
+  };
 
   if (submitted && !error) {
     return (
@@ -87,15 +89,15 @@ const Register = () => {
           </div>
         </div>
       </main>
-    )
+    );
   }
 
   return (
     <main className="relative min-h-screen bg-[color:var(--bg-app)] px-4 py-10 text-[color:var(--text-primary)] sm:px-6 lg:px-8">
       <Link to="/" className="mb-6 inline-flex items-center gap-2 transition hover:opacity-85">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-brand-400 text-zinc-950 font-bold">K</div>
-                        <span className="text-lg font-semibold tracking-tight">Kairis AI</span>
-                    </Link>
+        <div className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-brand-400 text-zinc-950 font-bold">K</div>
+        <span className="text-lg font-semibold tracking-tight">Kairis AI</span>
+      </Link>
       <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
         <button ref={ref} onClick={toggleSwitchTheme}>
           {isDarkMode ? <Moon className="size-4" /> : <Sun className="size-4" />}
@@ -104,7 +106,7 @@ const Register = () => {
 
       <div className="mx-auto flex min-h-[85vh] w-full max-w-5xl items-center justify-center">
         <div className="w-full max-w-md rounded-[5px] border border-brand-400/30 bg-[color:var(--bg-surface)] p-6 shadow-2xl shadow-black/10 dark:shadow-black/50 sm:p-8">
-          
+
 
           <h1 className="text-2xl font-bold text-brand-500 sm:text-3xl">
             Create Account
@@ -113,30 +115,30 @@ const Register = () => {
             Register with your full name, email, and password.
           </p>
 
-          
+
 
           <form onSubmit={submitForm} className="mt-8 space-y-5">
             <div>
               <TextField className="w-full" isInvalid={isFullnameInvalid}>
-              <label htmlFor="fullname" className="mb-2 block text-sm font-medium">
-                Full Name
-              </label>
-              <input
-                id="fullname"
-                type="text"
-                autoComplete="name"
-                value={fullname}
-                onChange={(event) => setFullname(event.target.value)}
-                placeholder="Enter your full name"
-                required
-                className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
-              />
-              <FieldError>Full name must be at least 3 characters</FieldError>
+                <label htmlFor="fullname" className="mb-2 block text-sm font-medium">
+                  Full Name
+                </label>
+                <input
+                  id="fullname"
+                  type="text"
+                  autoComplete="name"
+                  value={fullname}
+                  onChange={(event) => setFullname(event.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                  className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
+                />
+                <FieldError>Full name must be at least 3 characters</FieldError>
               </TextField>
             </div>
 
             <div>
-              
+
               <label htmlFor="email" className="mb-2 block text-sm font-medium">
                 Email
               </label>
@@ -150,33 +152,46 @@ const Register = () => {
                 required
                 className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
               />
-              
+
             </div>
 
             <div>
               <TextField className="w-full" isInvalid={isPasswordInvalid}>
-              <label htmlFor="password" className="mb-2 block text-sm font-medium">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Create a password"
-                required
-                className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
-              />
-              <FieldError>Password must be at least 6 characters</FieldError>
+                <label htmlFor="password" className="mb-2 block text-sm font-medium">
+                  Password
+                </label>
+                <div className='relative flex items-center'>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Create a password"
+                    required
+                    className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
+                  />
+                  <button
+                    type='button'
+                    className='absolute right-3 text-gray-400 hover:text-gray-600 focus:outline-none'
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className='h-5 w-5' aria-hidden='true' />
+                    ) : (<Eye className='h-5 w-5' aria-hidden='true' />)}
+                  </button>
+                </div>
+                <FieldError>Password must be at least 6 characters</FieldError>
               </TextField>
+
             </div>
-            
+
             {error && (
-            <div role="alert" className="mt-4 rounded-[5px] border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-500 dark:text-red-300">
-              {error}
-            </div>
-          )}
+              <div role="alert" className="mt-4 rounded-[5px] border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-500 dark:text-red-300">
+                {error}
+              </div>
+            )}
 
             <AnimatedButton
               type="submit"
@@ -202,9 +217,9 @@ const Register = () => {
             </Link>
           </p>
         </div>
-      </div>
-    </main>
-  )
-}
+      </div >
+    </main >
+  );
+};
 
-export default Register
+export default Register;
