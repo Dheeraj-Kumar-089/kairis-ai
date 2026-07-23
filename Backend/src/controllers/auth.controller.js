@@ -239,26 +239,16 @@ export async function verifyEmail(req, res) {
         const user = await userModel.findOne({ email: decoded.email });
 
         if (!user) {
-            return res.status(400).json({
-                message: "User not found",
-                success: false,
-                err: "User not found"
-            });
+            return res.redirect(`${config.FRONTEND_URL}/login?error=user_not_found`);
         }
 
         user.verified = true;
         await user.save();
 
-        const html = verifiedSuccessPage({ loginUrl: `${config.FRONTEND_URL}/login` });
-
-        return res.send(html);
+        return res.redirect(`${config.FRONTEND_URL}/login?verified=true`);
 
     } catch (err) {
-        return res.status(400).json({
-            message: "Invalid or expired token",
-            success: false,
-            err: err.message
-        });
+        return res.redirect(`${config.FRONTEND_URL}/login?error=invalid_token`);
     }
 
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { useSelector } from 'react-redux'
 import { Navigate } from 'react-router'
@@ -12,6 +12,10 @@ import { Moon, Sun } from 'lucide-react'
 
 
 const Login = () => {
+    const [ searchParams ] = useSearchParams()
+    const isVerified = searchParams.get('verified') === 'true'
+    const urlError = searchParams.get('error')
+
     const [ email, setEmail ] = useState('')
     const [ password, setPassword ] = useState('')
 
@@ -126,6 +130,18 @@ const Login = () => {
                                 className="w-full rounded-[5px] border border-black/10 dark:border-white/15 bg-transparent px-4 py-3 outline-none ring-0 transition placeholder:text-[color:var(--text-secondary)] focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(248,147,79,0.2)]"
                             />
                         </div>
+
+                        {isVerified && (
+                            <div role="status" className="mt-4 rounded-[5px] border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-500 dark:text-emerald-400">
+                                Email verified successfully! You can now log in.
+                            </div>
+                        )}
+
+                        {urlError && !error && (
+                            <div role="alert" className="mt-4 rounded-[5px] border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-500 dark:text-red-300">
+                                {urlError === 'user_not_found' ? 'User not found.' : 'Invalid or expired verification link.'}
+                            </div>
+                        )}
 
                         {error && (
                         <div role="alert" className="mt-4 rounded-[5px] border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-500 dark:text-red-300">
