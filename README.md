@@ -43,7 +43,6 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Fullscreen Lightbox**: Click any attachment thumbnail to open a fullscreen lightbox overlay rendered outside viewport constraints via **React Portals** (`createPortal`).
 
 ### 3. Context-Aware RAG (Vector DB)
-* **Score-Filtered Matching**: Employs similarity score thresholds (`>= 0.35`) with Pinecone Vector DB to strip out irrelevant search noise.
 * **Real-time Web Search Integration**: Uses Tavily Search API for up-to-date web answers when context requires it.
 
 ### 4. Voice Prompting
