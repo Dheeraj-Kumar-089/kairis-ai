@@ -11,6 +11,15 @@ import { Moon, Sun } from 'lucide-react'
 
 const Register = () => {
   const [fullname, setFullname] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+
+  const { handleRegister } = useAuth()
+  const { ref, toggleSwitchTheme, isDarkMode } = useModeAnimation({
+    animationType: ThemeAnimationType.QR_SCAN,
+    duration: 700,
+  })
 
   useEffect(() => {
     document.body.classList.add('no-scrollbar');
@@ -18,9 +27,6 @@ const Register = () => {
       document.body.classList.remove('no-scrollbar');
     };
   }, []);
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [submitted, setSubmitted] = useState(false)
 
   const isFullnameInvalid = fullname.length > 0 && fullname.length < 3;
   const isPasswordInvalid = password.length > 0 && password.length<6;
@@ -36,13 +42,6 @@ const Register = () => {
       </div>
     )
   }
-
-  const { handleRegister } = useAuth()
-
-  const { ref, toggleSwitchTheme, isDarkMode } = useModeAnimation({
-    animationType: ThemeAnimationType.QR_SCAN,
-    duration: 700,
-  })
 
   const submitForm = async (event) => {
     event.preventDefault()

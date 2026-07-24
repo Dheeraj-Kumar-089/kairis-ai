@@ -19,6 +19,13 @@ const Login = () => {
     const [ email, setEmail ] = useState('')
     const [ password, setPassword ] = useState('')
 
+    const { handleLogin } = useAuth()
+    const navigate = useNavigate()
+    const { ref, toggleSwitchTheme, isDarkMode } = useModeAnimation({
+        animationType: ThemeAnimationType.QR_SCAN,
+        duration: 700,
+    })
+
     useEffect(() => {
         document.body.classList.add('no-scrollbar');
         return () => {
@@ -38,15 +45,6 @@ const Login = () => {
             </div>
         )
     }
-
-    const { handleLogin } = useAuth()
-
-    const navigate = useNavigate()
-
-    const { ref, toggleSwitchTheme, isDarkMode } = useModeAnimation({
-        animationType: ThemeAnimationType.QR_SCAN,
-        duration: 700,
-    })
 
     const submitForm = async (event) => {
         event.preventDefault()
