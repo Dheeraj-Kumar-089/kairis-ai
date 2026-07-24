@@ -15,6 +15,14 @@ const publicDir = path.join(__dirname, "..", "public"); // Backend/public
 
 const app = express();
 
+// Lightweight health check endpoints for keep-alive cronjobs
+app.get("/health", (req, res) => {
+    res.status(200).send("OK");
+});
+app.get("/ping", (req, res) => {
+    res.status(200).send("pong");
+});
+
 
 
 //Middlewares
