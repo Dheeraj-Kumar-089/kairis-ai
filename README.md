@@ -32,28 +32,25 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 ## 🌟 Key Features
 
 ### 1. Secure & Versatile Auth Flow
-* Traditional email/password signup with automatic verification emails.
+* Traditional email/password signup with automatic verification emails
+* Seamless **production email verification redirect** returning users directly to the frontend with custom UI status banners (`verified=true` / error messaging).
 * Single-click **Google OAuth Login** with automatic user provisioning.
 * Secure HTTP-only cookies designed to work cross-site in production.
 
-
-### 2. Thread Length Constraints & Summarization
-* **Intelligent Summarization**: Automatically condenses core topics and decisions into 3-5 paragraphs to reduce the token usage
-
-
-### 3. Advanced Multi-File Upload & Lightbox Preview
-* **Staged Attachments**: Stage up to 5 images or PDFs in a compact preview row (occupying 75% width) before sending.
+### 2. Advanced Multi-File Upload & Lightbox Preview
+* **Staged Attachments**: Stage up to 5 images or PDFs in single prompt.
 * **Upload Limits**: Limits uploads to a maximum of 5 MB per file and 15 MB in total per prompt.
 * **Fullscreen Lightbox**: Click any attachment thumbnail to open a fullscreen lightbox overlay rendered outside viewport constraints via **React Portals** (`createPortal`).
 
-### 4. Structured Storage & Context-Aware RAG (Vector DB)
-* **Score-Filtered Matching**: Employs similarity score thresholds (`>= 0.35`) to strip out irrelevant search noise.
+### 3. Context-Aware RAG (Vector DB)
+* **Score-Filtered Matching**: Employs similarity score thresholds (`>= 0.35`) with Pinecone Vector DB to strip out irrelevant search noise.
+* **Real-time Web Search Integration**: Uses Tavily Search API for up-to-date web answers when context requires it.
 
-### 5. Voice Prompting
+### 4. Voice Prompting
 * Integrated fast voice prompt input utilizing the **Web Speech API** for hands-free queries.
 
-### 6. Premium Responsive UI
-* Theme toggle with smooth, customizable transition animations.
+### 5. Premium Responsive UI & Production Stability
+* Fully compliant with React Rules of Hooks to prevent unexpected runtime errors across state transitions.
 * Fully mobile-responsive layouts with collapsable sidebars.
 
 ---
@@ -88,75 +85,3 @@ kairis-ai/
 └── README.md
 ```
 
----
-
-## ⚙️ Configuration & Environment Variables
-
-Create your environment files in their respective folders:
-
-### Backend (`Backend/.env`)
-```env
-PORT=8000
-NODE_ENV=development
-MONGO_URI=your_mongodb_connection_uri
-JWT_SECRET=your_jwt_signing_secret
-
-# URL Configs
-FRONTEND_URL=http://localhost:5173
-SERVER_URL=http://localhost:8000
-
-# Google OAuth
-GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
-GOOGLE_OAUTH_CLIENT_SECRET=your_google_oauth_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:8000/api/auth/google/callback
-
-# Mailjet
-MAILJET_API_KEY=your_mailjet_api_key
-MAILJET_API_SECRET=your_mailjet_api_secret
-MAILJET_SENDER_EMAIL=your_verified_sender_email
-
-# ImageKit (Cloud Storage)
-IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
-IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
-
-# AI & Vector DB keys
-GEMINI_API_KEY=your_google_gemini_api_key
-MISTRAL_API_KEY=your_mistral_api_key
-TAVILY_API_KEY=your_tavily_api_key
-PINECONE_API_KEY=your_pinecone_api_key
-PINECONE_INDEX=kairisa-ai-rag
-```
-
-### Frontend (`Frontend/.env`)
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
----
-
-## 🛠️ How to Run Locally
-
-### 1. Clone & Set Up Backend
-```bash
-cd Backend
-npm install
-# Set up your .env file
-npm run dev
-```
-
-### 2. Set Up Frontend
-```bash
-cd ../Frontend
-npm install
-# Set up your .env file
-npm run dev
-```
-
-The frontend will run at `http://localhost:5173` and communicate with the backend running at `http://localhost:8000`.
-
----
-
-## 🚀 Deployed Environments
-* **Frontend Hosting**: Vercel (e.g. `https://kairis-ai.vercel.app`)
-* **Backend Hosting**: Render (e.g. `https://kairis-ai.onrender.com`)
