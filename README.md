@@ -1,4 +1,4 @@
-# Kairis AI 🤖✨
+# Kairis AI 
 
 Kairis AI is a premium, state-of-the-art AI assistant application powered by modern LLMs (Gemini, Mistral, and Llama 3), Retrieval-Augmented Generation (RAG) using Pinecone, and real-time communication via Socket.io. It supports standard email authentication (with verification flow) as well as seamless Google OAuth login.
 
