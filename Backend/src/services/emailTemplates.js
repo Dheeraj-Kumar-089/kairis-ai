@@ -1,9 +1,13 @@
 
 
 const LOGO = `
-  <div style="width:56px;height:56px;border-radius:50px;background:#111114;display:flex;align-items:center;justify-content:center;margin:auto;">
-    <span style="font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:#ffffff;line-height:56px;">K</span>
-  </div>
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 24px auto;width:56px;height:56px;">
+    <tr>
+      <td align="center" valign="middle" style="width:56px;height:56px;background-color:#111114;border-radius:50%;text-align:center;vertical-align:middle;font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:#ffffff;line-height:56px;padding:0;">
+        K
+      </td>
+    </tr>
+  </table>
 `;
 
 export function verificationEmailTemplate({ fullname, verifyUrl }) {
