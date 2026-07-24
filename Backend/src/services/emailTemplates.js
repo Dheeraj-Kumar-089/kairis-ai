@@ -1,7 +1,7 @@
 
 
 const LOGO = `
-  <div style="width:56px;height:56px;border-radius:16px;background:#111114;display:flex;align-items:center;justify-content:center;margin:0 auto 28px auto;">
+  <div style="width:56px;height:56px;border-radius:50px;background:#111114;display:flex;align-items:center;justify-content:center;margin:auto;">
     <span style="font-family:'Space Grotesk',Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:#ffffff;line-height:56px;">K</span>
   </div>
 `;
