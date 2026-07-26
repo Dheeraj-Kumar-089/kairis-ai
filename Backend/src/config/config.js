@@ -63,4 +63,14 @@ export const config = {
     // RAG / vector database (Pinecone)
     PINECONE_API_KEY: process.env.PINECONE_API_KEY,
     PINECONE_INDEX: process.env.PINECONE_INDEX || "kairisa-ai-rag",
+
+    // GitHub (repo chat) - server-wide fallback token, optional, raises rate
+    // limit and allows private repos when a user hasn't connected their own account
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN || "",
+
+    // GitHub OAuth (per-user "Connect GitHub" - lets each user scan their own
+    // private repos with their own token instead of relying on GITHUB_TOKEN)
+    GITHUB_OAUTH_CLIENT_ID: process.env.GITHUB_OAUTH_CLIENT_ID || "",
+    GITHUB_OAUTH_CLIENT_SECRET: process.env.GITHUB_OAUTH_CLIENT_SECRET || "",
+    GITHUB_OAUTH_CALLBACK_URL: process.env.GITHUB_OAUTH_CALLBACK_URL || `${process.env.SERVER_URL || ""}/api/auth/github/connect/callback`,
 };

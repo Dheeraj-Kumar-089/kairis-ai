@@ -33,6 +33,13 @@ const userSchema = new mongoose.Schema(
         googleId: {
             type: String,
         },
+        githubUsername: {
+            type: String,
+        },
+        githubAccessToken: {
+            type: String,
+            select: false, // never returned by default queries (e.g. getMe)
+        },
         messageCountToday: {
             type: Number,
             default: 0,

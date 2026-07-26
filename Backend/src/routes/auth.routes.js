@@ -1,5 +1,5 @@
 import {Router} from "express";
-import {getMe, login, logout, register, verifyEmail,googleCallback} from "../controllers/auth.controller.js";
+import {getMe, login, logout, register, verifyEmail,googleCallback, githubConnect, githubConnectCallback} from "../controllers/auth.controller.js";
 import {loginValidator, registerValidator} from "../validators/auth.validator.js";
 import { authUser } from "../middlewares/auth.middleware.js";
 import passport from "passport";
@@ -64,13 +64,28 @@ authRouter.get("/google",
 
     
 authRouter.get("/google/callback",
-    passport.authenticate("google", {    
+    passport.authenticate("google", {
         session: false,
 
         failureRedirect: `${config.FRONTEND_URL}/login`
     }),
     googleCallback,
 )
+
+
+/**
+ * @route GET /api/auth/github/connect
+ * @desc Redirect logged-in user to GitHub to authorize repo access (for repo scan/chat)
+ * @access Private
+ */
+authRouter.get("/github/connect", authUser, githubConnect)
+
+/**
+ * @route GET /api/auth/github/connect/callback
+ * @desc GitHub redirects here after authorization; identity confirmed via signed state param
+ * @access Public (state param, not cookie, confirms identity)
+ */
+authRouter.get("/github/connect/callback", githubConnectCallback)
 
 
 export default authRouter;

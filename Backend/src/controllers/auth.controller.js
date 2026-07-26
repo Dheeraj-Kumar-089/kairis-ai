@@ -224,6 +224,82 @@ export const googleCallback = async (req, res) => {
 
 
 /**
+ * @desc Redirect the logged-in user to GitHub to authorize repo access
+ * @route GET /api/auth/github/connect
+ * @access Private
+ */
+export function githubConnect(req, res) {
+    if (!config.GITHUB_OAUTH_CLIENT_ID) {
+        return res.status(500).json({ message: "GitHub OAuth is not configured on this server" });
+    }
+
+    // Sign the user id into `state` so the callback can identify them even
+    // though GitHub's redirect is a fresh top-level navigation (cookie still
+    // rides along since it's the same domain, but state gives us a second,
+    // tamper-proof way to confirm identity).
+    const state = jwt.sign({ id: req.user.id }, config.JWT_SECRET, { expiresIn: "10m" });
+
+    const params = new URLSearchParams({
+        client_id: config.GITHUB_OAUTH_CLIENT_ID,
+        redirect_uri: config.GITHUB_OAUTH_CALLBACK_URL,
+        scope: "repo",
+        state,
+    });
+
+    res.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
+}
+
+/**
+ * @desc Handle GitHub's OAuth redirect back, exchange code for a token, save it
+ * @route GET /api/auth/github/connect/callback
+ * @access Private (identity confirmed via signed `state`, not cookie, since
+ *         GitHub's redirect can arrive as a fresh navigation)
+ */
+export async function githubConnectCallback(req, res) {
+    const { code, state } = req.query;
+
+    try {
+        const decoded = jwt.verify(state, config.JWT_SECRET);
+        const userId = decoded.id;
+
+        const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({
+                client_id: config.GITHUB_OAUTH_CLIENT_ID,
+                client_secret: config.GITHUB_OAUTH_CLIENT_SECRET,
+                code,
+                redirect_uri: config.GITHUB_OAUTH_CALLBACK_URL,
+            }),
+        });
+        const tokenData = await tokenRes.json();
+
+        if (!tokenData.access_token) {
+            console.error("GitHub OAuth token exchange failed:", tokenData);
+            return res.redirect(`${config.FRONTEND_URL}/dashboard?github=error`);
+        }
+
+        const profileRes = await fetch("https://api.github.com/user", {
+            headers: {
+                Authorization: `Bearer ${tokenData.access_token}`,
+                "User-Agent": "kairis-ai",
+            },
+        });
+        const profile = await profileRes.json();
+
+        await userModel.findByIdAndUpdate(userId, {
+            githubAccessToken: tokenData.access_token,
+            githubUsername: profile.login,
+        });
+
+        return res.redirect(`${config.FRONTEND_URL}/dashboard?github=connected`);
+    } catch (err) {
+        console.error("GitHub connect callback failed:", err.message);
+        return res.redirect(`${config.FRONTEND_URL}/dashboard?github=error`);
+    }
+}
+
+/**
  * @desc Verify email
  * @route GET /api/auth/verify-email
  * @access Public
