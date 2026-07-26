@@ -57,7 +57,96 @@ Return only the extracted text and descriptions, no commentary.`,
     return response.text;
 }
 
-// Parse (pdf or image) 
+const EMBED_BATCH_SIZE = 96; // texts per embeddings.embedDocuments() call
+
+// Sliding-window throttle: only waits once we're actually near Mistral's
+// 60 req/min embeddings limit, instead of a flat delay on every single
+// batch. Typical repos (well under the per-minute cap) now index with
+// close to zero artificial delay; only large ones get throttled, and only
+// by as much as the limit actually requires.
+const MAX_REQUESTS_PER_WINDOW = 55; // safety margin under the real limit of 60
+const WINDOW_MS = 60000;
+const requestTimestamps = [];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function throttleEmbedRequest() {
+    const now = Date.now();
+    while (requestTimestamps.length && now - requestTimestamps[0] > WINDOW_MS) {
+        requestTimestamps.shift();
+    }
+    if (requestTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+        const waitMs = WINDOW_MS - (now - requestTimestamps[0]) + 50;
+        await sleep(waitMs);
+        return throttleEmbedRequest();
+    }
+    requestTimestamps.push(Date.now());
+}
+
+// Chunk + embed + upsert one or more {filename, text} pairs into Pinecone.
+// Shared by storeDocument (single pdf/image) and repo indexing (many code files).
+// Uses one batched embedDocuments() call per chunk-batch (instead of N parallel
+// embedQuery() calls) to avoid blowing the embeddings API's rate limit.
+export async function storeTextChunks({ texts, userId, chatId }) {
+    const chatIdStr = String(chatId || "general");
+    const timestamp = Date.now();
+
+    // Pool chunks from ALL files into one flat list before batching. Batching
+    // per-file (the old approach) meant a repo with many small files fired
+    // one tiny embed API call per file instead of filling full-size batches -
+    // by far the biggest source of extra round-trips for typical repos.
+    const pooled = [];
+    for (const { filename, text } of texts) {
+        if (!text || !text.trim()) continue;
+        const chunks = await splitter.splitText(text);
+        const safeFilename = filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
+        chunks.forEach((chunk, idx) => {
+            pooled.push({ chunk, filename, safeFilename, idx });
+        });
+    }
+
+    const upsertPromises = [];
+
+    for (let i = 0; i < pooled.length; i += EMBED_BATCH_SIZE) {
+        const batch = pooled.slice(i, i + EMBED_BATCH_SIZE);
+
+        await throttleEmbedRequest();
+        const vectors = await embeddings.embedDocuments(batch.map((b) => b.chunk));
+
+        const records = batch.map((b, j) => ({
+            id: `${userId}-${timestamp}-${b.safeFilename}-${b.idx}`,
+            values: vectors[j],
+            metadata: {
+                text: b.chunk,
+                userId: String(userId),
+                chatId: chatIdStr,
+                filename: b.filename,
+            },
+        }));
+
+        // Fire the upsert without blocking the next batch's embedding call -
+        // upsert and embed are independent network calls, so overlapping
+        // them (instead of strictly serializing embed -> upsert -> embed ->
+        // upsert) roughly halves the wall-clock time of this loop.
+        upsertPromises.push(index.upsert({ records }));
+    }
+
+    await Promise.all(upsertPromises);
+
+    return { chunks: pooled.length, files: texts.length };
+}
+
+// Delete all vectors for a chat (document/image/repo chunks) - called on chat delete.
+export async function deleteChatVectors({ userId, chatId }) {
+    await index.deleteMany({
+        filter: {
+            userId: String(userId),
+            chatId: String(chatId),
+        },
+    });
+}
+
+// Parse (pdf or image) then store
 export async function storeDocument({ buffer, mimetype, filename, userId, chatId }) {
     const text =
         mimetype === "application/pdf"
@@ -68,34 +157,12 @@ export async function storeDocument({ buffer, mimetype, filename, userId, chatId
         throw new Error("No text could be extracted from the file");
     }
 
-    const chunks = await splitter.splitText(text);
-
-    const docs = await Promise.all(
-        chunks.map(async (chunk) => {
-            const embedding = await embeddings.embedQuery(chunk);
-            return { text: chunk, embedding };
-        })
-    );
-
-    const timestamp = Date.now();
-    
-    await index.upsert({
-        records: docs.map((doc, i) => ({
-            id: `${userId}-${timestamp}-${i}`,
-            values: doc.embedding,
-            metadata: {
-                text: doc.text,
-                userId: String(userId),
-                chatId: String(chatId || "general"),
-                filename,
-            },
-        })),
-    });
-
-    return { chunks: docs.length, filename };
+    const result = await storeTextChunks({ texts: [{ filename, text }], userId, chatId });
+    return { chunks: result.chunks, filename };
 }
 
 export async function queryDocuments({ query, userId, chatId, filenames, topK = 4 }) {
+    await throttleEmbedRequest();
     const queryEmbedding = await embeddings.embedQuery(query);
 
     const filter = {
