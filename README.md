@@ -1,6 +1,6 @@
 # Kairis AI 
 
-Kairis AI is a premium, state-of-the-art AI assistant application powered by modern LLMs (Gemini, Mistral, and Llama 3), Retrieval-Augmented Generation (RAG) using Pinecone, and real-time communication via Socket.io. It supports standard email authentication (with verification flow) as well as seamless Google OAuth login.
+Kairis AI is a premium, state-of-the-art, context-aware AI assistant application powered by modern LLMs (Gemini, Mistral, and Llama 3), Retrieval-Augmented Generation (RAG) using Pinecone, and real-time communication via Socket.io. It supports standard email authentication (with verification flow) as well as seamless Google OAuth login. Beyond chat, it can ingest and reason over any content you give it — documents, images (via OCR), and entire GitHub repositories.
 
 ---
 
@@ -18,13 +18,14 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * **Framework**: [Express](https://expressjs.com/)
 * **Database**: [MongoDB](https://www.mongodb.com/) (using [Mongoose](https://mongoosejs.com/))
 * **Realtime Server**: [Socket.io](https://socket.io/)
-* **Authentication**: [Passport.js](https://www.passportjs.org/) (Google OAuth 2.0 Strategy) & JWT (JSON Web Tokens)
-* **Cloud Storage**: [ImageKit.io](https://imagekit.io/)
+* **Authentication**: [Passport.js](https://www.passportjs.org/) (Google OAuth 2.0 Strategy), a custom **GitHub OAuth** flow (per-user, for repo access), & JWT (JSON Web Tokens)
+* **Cloud Storage**: [ImageKit.io](https://imagekit.io/) via the official [`@imagekit/nodejs`](https://github.com/imagekit-developer/imagekit-nodejs) SDK
+* **Source Integration**: [GitHub REST API](https://docs.github.com/en/rest) (repo tree + raw file fetch, public or private via per-user token)
 
 ### AI & Vector Databases (RAG)
 * **Orchestration**: [LangChain](https://js.langchain.com/)
 * **LLM Providers**: Google Gemini GenAI, Mistral AI, and Llama 3 (via Groq/fallback endpoints)
-* **Vector Store**: [Pinecone Vector DB](https://www.pinecone.io/) (for context-aware document queries)
+* **Vector Store**: [Pinecone Vector DB](https://www.pinecone.io/) (for context-aware document, image, and codebase queries)
 * **Search Tool**: [Tavily Search API](https://tavily.com/) (for real-time web search capabilities)
 
 ---
@@ -35,15 +36,20 @@ Kairis AI is a premium, state-of-the-art AI assistant application powered by mod
 * Traditional email/password signup with automatic verification emails
 * Seamless **production email verification redirect** returning users directly to the frontend with custom UI status banners (`verified=true` / error messaging).
 * Single-click **Google OAuth Login** with automatic user provisioning.
+* Separate, optional **"Connect GitHub"** OAuth flow (per-user, `repo` scope) so each user can chat with their own private repositories without sharing a server-wide token.
 * Secure HTTP-only cookies designed to work cross-site in production.
 
 ### 2. Advanced Multi-File Upload & Lightbox Preview
-* **Staged Attachments**: Stage up to 5 images or PDFs in single prompt.
+* **Staged Attachments**: Stage up to 5 images or PDFs in a single prompt.
+* **Paste to Upload**: Paste an image or PDF directly from the clipboard into the chat box.
 * **Upload Limits**: Limits uploads to a maximum of 5 MB per file and 15 MB in total per prompt.
 * **Fullscreen Lightbox**: Click any attachment thumbnail to open a fullscreen lightbox overlay rendered outside viewport constraints via **React Portals** (`createPortal`).
 
 ### 3. Context-Aware RAG (Vector DB)
+* **Document & Image Q&A**: Upload PDFs or images (OCR'd via Gemini Vision), chunked and embedded into Pinecone, then ask questions about them in chat.
+* **GitHub Repo Chat**: Paste a GitHub repo URL to index its code files into the same Pinecone-backed pipeline, then chat directly with the codebase — works with public repos out of the box, or private repos once GitHub is connected.
 * **Real-time Web Search Integration**: Uses Tavily Search API for up-to-date web answers when context requires it.
+* **Clean Deletes**: Deleting a chat removes its messages and any associated Pinecone vector data (uploaded docs/images/repo chunks), so no orphaned embeddings are left behind.
 
 ### 4. Voice Prompting
 * Integrated fast voice prompt input utilizing the **Web Speech API** for hands-free queries.
@@ -65,7 +71,7 @@ kairis-ai/
 │   │   ├── middlewares/    # Authentication, Validation, Rate Limiter
 │   │   ├── models/         # MongoDB Schemas (User, Chat, Message)
 │   │   ├── routes/         # Express router endpoints
-│   │   ├── services/       # Mailjet, Email Templates, AI/RAG services
+│   │   ├── services/       # Mailjet, Email Templates, AI/RAG, GitHub, ImageKit storage services
 │   │   └── sockets/        # Socket.io configurations
 │   ├── server.js           # Server startup script
 │   └── package.json
