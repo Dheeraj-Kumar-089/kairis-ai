@@ -31,6 +31,11 @@ export const renameChat = async (chatId, title) => {
     return response.data;
 }
 
+export const connectRepo = async (repoUrl, chatId) => {
+    const response = await api.post("api/chats/connect-repo", { repoUrl, chatId });
+    return response.data;
+}
+
 export const uploadDocument = async (file, chatId) => {
     const formData = new FormData();
     formData.append("file", file);

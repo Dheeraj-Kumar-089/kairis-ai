@@ -1,6 +1,6 @@
 import { initializeSocketConnection } from "../services/chat.socket";
 import { useDispatch } from "react-redux";
-import { sendMessage, getChats, getMessages, deleteChat as deleteChatApi, renameChat as renameChatApi, uploadDocument } from "../services/chat.api.js";
+import { sendMessage, getChats, getMessages, deleteChat as deleteChatApi, renameChat as renameChatApi, uploadDocument, connectRepo } from "../services/chat.api.js";
 import { setChats, setCurrentChatId, setError, setLoading, createNewChat, addNewMessage, addMessages, removeChat, renameChatTitle, replaceTempChatId } from "../chat.slice";
 
 
@@ -115,6 +115,24 @@ export function useChat() {
         return await uploadDocument(file, chatId);
     }
 
+    async function handleConnectRepo(repoUrl, chatId) {
+        const data = await connectRepo(repoUrl, chatId);
+        const { chat, aiMessage } = data;
+
+        if (!chatId) {
+            dispatch(createNewChat({ chatId: chat._id, title: chat.title }));
+            dispatch(setCurrentChatId(chat._id));
+        }
+
+        dispatch(addNewMessage({
+            chatId: chat._id,
+            content: aiMessage.content,
+            role: aiMessage.role,
+        }));
+
+        return data;
+    }
+
     return {
 
         initializeSocketConnection,
@@ -124,7 +142,8 @@ export function useChat() {
         handleDeleteChat,
         handleNewChat,
         handleRenameChat,
-        handleUploadDocument
+        handleUploadDocument,
+        handleConnectRepo
     }
 
 

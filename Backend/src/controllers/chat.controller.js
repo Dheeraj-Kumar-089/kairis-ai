@@ -1,6 +1,7 @@
 import { generateResponse, generateChatTitle, generateSummary } from "../services/ai.service.js";
-import { storeDocument, queryDocuments } from "../services/rag.service.js";
+import { storeDocument, storeTextChunks, queryDocuments, deleteChatVectors } from "../services/rag.service.js";
 import { uploadFile } from "../services/storage.service.js";
+import { fetchRepoFiles } from "../services/github.service.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import userModel from "../models/user.model.js";
@@ -243,6 +244,67 @@ export async function uploadDocument(req, res) {
     }
 }
 
+async function getUserGithubToken(userId) {
+    const user = await userModel.findById(userId).select("+githubAccessToken");
+    return user?.githubAccessToken || null;
+}
+
+export async function connectRepo(req, res) {
+    try {
+        const { repoUrl, chatId } = req.body;
+
+        if (!repoUrl || typeof repoUrl !== "string") {
+            return res.status(400).json({ message: "repoUrl is required" });
+        }
+
+        let targetChatId = chatId;
+        let chat = null;
+
+        if (targetChatId) {
+            chat = await chatModel.findOne({ _id: targetChatId, user: req.user.id });
+            if (!chat) {
+                return res.status(404).json({ message: "Chat not found" });
+            }
+        } else {
+            chat = await chatModel.create({ user: req.user.id, title: `Repo: ${repoUrl}` });
+            targetChatId = chat._id;
+        }
+
+        const githubToken = await getUserGithubToken(req.user.id);
+        const { owner, repo, branch, files } = await fetchRepoFiles(repoUrl, githubToken);
+
+        if (files.length === 0) {
+            return res.status(400).json({ message: "No indexable files found in this repo" });
+        }
+
+        const result = await storeTextChunks({
+            texts: files.map((f) => ({ filename: f.filename, text: f.text })),
+            userId: req.user.id,
+            chatId: targetChatId,
+        });
+
+        const aiMessage = await messageModel.create({
+            chat: targetChatId,
+            content: `Connected repo ${owner}/${repo} (branch: ${branch}). Indexed ${result.files} files, ${result.chunks} chunks. Ask me anything about this codebase.`,
+            role: "ai",
+        });
+
+        res.status(201).json({
+            message: "Repo indexed successfully",
+            chat,
+            aiMessage,
+            owner,
+            repo,
+            branch,
+            filesIndexed: result.files,
+            chunks: result.chunks,
+        });
+    } catch (error) {
+        console.error("Error connecting repo:", error);
+        res.status(500).json({ message: "Failed to index repo", error: error.message });
+    }
+}
+
 export async function getChats(req, res) {
     const user = req.user;
 
@@ -322,14 +384,22 @@ export async function deleteChat(req, res) {
         user: req.user.id
     })
 
-    await messageModel.deleteMany({
-        chat: chatId
-    })
-
     if (!chat) {
         return res.status(404).json({
             message: "Chat not found"
         })
+    }
+
+    await messageModel.deleteMany({
+        chat: chatId
+    })
+
+    try {
+        await deleteChatVectors({ userId: req.user.id, chatId });
+    } catch (vectorErr) {
+        // Don't fail the delete if Pinecone cleanup errors (e.g. chat had no
+        // vectors, or index unreachable) - the chat/messages are already gone.
+        console.error("Failed to delete vector data for chat:", vectorErr.message);
     }
 
     res.status(200).json({

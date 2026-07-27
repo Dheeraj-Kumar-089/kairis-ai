@@ -31,7 +31,7 @@ const messageSchema = new mongoose.Schema(
                 fileName: { type: String, required: true },
                 fileType: { type: String, required: true }
             }
-        ]
+        ],
     },
     { timestamps: true }
 );

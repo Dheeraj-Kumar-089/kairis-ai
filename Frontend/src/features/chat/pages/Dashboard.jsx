@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useChat } from '../hooks/useChat';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { Plus, Library, Compass, LogOut } from 'lucide-react';
+import { Plus, Library, Compass, LogOut, GitBranch } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -49,6 +49,7 @@ const Dashboard = () => {
   const auth = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [chatInput, setChatInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState([]); // Array of { id, file, url, name, size, type, status, fileUrl }
   const fileInputRef = useRef(null);
@@ -57,6 +58,9 @@ const Dashboard = () => {
   const isLoading = useSelector((state) => state.chat.isLoading);
   const user = useSelector((state) => state.auth.user);
   const [totalUploadedSize, setTotalUploadedSize] = useState(0);
+  const [showRepoInput, setShowRepoInput] = useState(false);
+  const [repoUrlInput, setRepoUrlInput] = useState('');
+  const [isConnectingRepo, setIsConnectingRepo] = useState(false);
 
   const [isListening, setIsListening] = useState(false);
 
@@ -116,6 +120,23 @@ const Dashboard = () => {
   useEffect(() => {
     chat.initializeSocketConnection();
     chat.handleGetChats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle redirect back from GitHub's "Connect GitHub" OAuth flow
+  useEffect(() => {
+    const githubStatus = searchParams.get('github');
+    if (!githubStatus) return;
+
+    if (githubStatus === 'connected') {
+      auth.handleGetMe();
+      alert("GitHub connected. You can now scan/chat with private repos.");
+    } else if (githubStatus === 'error') {
+      alert("Failed to connect GitHub. Please try again.");
+    }
+
+    searchParams.delete('github');
+    setSearchParams(searchParams, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -228,6 +249,24 @@ const Dashboard = () => {
     processFiles(files);
   };
 
+  const handleConnectRepo = async (event) => {
+    event.preventDefault();
+    const trimmedUrl = repoUrlInput.trim();
+    if (!trimmedUrl) return;
+
+    setIsConnectingRepo(true);
+    try {
+      await chat.handleConnectRepo(trimmedUrl, currentChatId);
+      setRepoUrlInput('');
+      setShowRepoInput(false);
+    } catch (err) {
+      console.error("Failed to connect repo:", err);
+      alert(err.response?.data?.message || "Failed to index repo. Check the URL and try again.");
+    } finally {
+      setIsConnectingRepo(false);
+    }
+  };
+
   const removeAttachedFile = (fileId) => {
     const fileToRemove = attachedFiles.find(f => f.id === fileId);
     if (!fileToRemove) return;
@@ -296,6 +335,56 @@ const Dashboard = () => {
         </div>
       )}
 
+      {showRepoInput && (
+        <div className="mb-3 border-b border-black/5 dark:border-white/5 pb-3">
+          <div className="mb-2 text-xs text-[color:var(--text-secondary)]">
+            {user?.githubUsername ? (
+              <span>GitHub connected as <span className="font-semibold text-[color:var(--text-primary)]">@{user.githubUsername}</span> — private repos work too.</span>
+            ) : (
+              <span>
+                Public repos work without connecting.{" "}
+                <a
+                  href={`${import.meta.env.VITE_API_BASE_URL ?? ""}/api/auth/github/connect`}
+                  className="text-brand-400 hover:underline font-semibold"
+                >
+                  Connect GitHub
+                </a>{" "}
+                to also scan/chat with your private repos.
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={repoUrlInput}
+            onChange={(event) => setRepoUrlInput(event.target.value)}
+            disabled={isConnectingRepo}
+            placeholder="https://github.com/owner/repo"
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[color:var(--text-secondary)] disabled:opacity-50"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleConnectRepo(event);
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleConnectRepo}
+            disabled={isConnectingRepo || !repoUrlInput.trim()}
+            className="shrink-0 rounded-full bg-brand-400 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-brand-300 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {isConnectingRepo ? "Analyzing..." : "Connect"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowRepoInput(false); setRepoUrlInput(''); }}
+            aria-label="Cancel"
+            className="shrink-0 inline-flex size-6 items-center justify-center rounded-full text-[color:var(--text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
+          >
+            <X className="size-3" />
+          </button>
+          </div>
+        </div>
+      )}
+
       <input
         type="text"
         value={chatInput}
@@ -328,6 +417,20 @@ const Dashboard = () => {
 
           <button
             type="button"
+            onClick={() => setShowRepoInput((prev) => !prev)}
+            disabled={isCapped}
+            aria-label="Connect GitHub repo"
+            className={`inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition disabled:pointer-events-none disabled:opacity-50 ${
+              showRepoInput
+                ? "border-brand-400 bg-brand-400/20 text-brand-400"
+                : "border-black/10 text-[color:var(--text-secondary)] hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10"
+            }`}
+          >
+            <GitBranch className="size-4" />
+          </button>
+
+          <button
+            type="button"
             onClick={handleVoiceInput}
             disabled={isCapped}
             aria-label="Voice prompt"
@@ -343,7 +446,7 @@ const Dashboard = () => {
 
         <button
           type="submit"
-          disabled={(!chatInput.trim() && attachedFiles.length === 0) || isLoading || isCapped || isUploadingFiles}
+          disabled={(!chatInput.trim() && attachedFiles.length === 0) || isLoading || isCapped || isUploadingFiles || isConnectingRepo}
           aria-label="Send message"
           className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-400 text-zinc-950 transition hover:bg-brand-500 disabled:pointer-events-none disabled:opacity-50"
         >
@@ -441,8 +544,6 @@ const Dashboard = () => {
                 <Plus className="h-4 w-4 text-[color:var(--text-secondary)]" />
                 New Chat
               </button>
-
-
 
             </nav>
           </SidebarHeader>
