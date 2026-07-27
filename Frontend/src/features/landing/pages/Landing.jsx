@@ -81,6 +81,18 @@ const Landing = () => {
                         <AnimatedButton className="px-8 py-3 text-base cursor-pointer">Get Started</AnimatedButton>
                     </Link>
                 </div>
+
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 pointer-events-none">
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
+                        Chat with any GitHub repo
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
+                        Docs & image Q&A
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60">
+                        Multi-model AI
+                    </span>
+                </div>
             </main>
         </div>
     );
