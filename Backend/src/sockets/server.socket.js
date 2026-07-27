@@ -15,8 +15,8 @@ export function initSocket(httpServer) {
 
     console.log("Socket.io server is running");
 
-    io.on("connection", (socket) => {   
-        console.log("A user connected", socket.id); 
+    io.on("connection", (socket) => {
+        console.log("A user connected", socket.id);
 
     })
 }

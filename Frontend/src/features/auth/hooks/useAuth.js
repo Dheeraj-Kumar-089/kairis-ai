@@ -17,7 +17,6 @@ export function useAuth() {
             return true;
 
         } catch (error) {
-            console.log(error)
             const errMsg = error.response?.data?.errors?.[0]?.msg || error.response?.data?.message || "Registration failed";
             dispatch(setError(errMsg));
             return false;
@@ -65,7 +64,6 @@ export function useAuth() {
             await logout();
             return true;
         } catch (error) {
-            console.log(error);
             const errMsg = error.response?.data?.message || "Logout failed";
             dispatch(setError(errMsg));
             return false;
