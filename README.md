@@ -19,7 +19,7 @@ Kairis AI is a premium, state-of-the-art, context-aware AI assistant application
 * **Database**: [MongoDB](https://www.mongodb.com/) (using [Mongoose](https://mongoosejs.com/))
 * **Realtime Server**: [Socket.io](https://socket.io/)
 * **Authentication**: [Passport.js](https://www.passportjs.org/) (Google OAuth 2.0 Strategy), a custom **GitHub OAuth** flow (per-user, for repo access), & JWT (JSON Web Tokens)
-* **Cloud Storage**: [ImageKit.io](https://imagekit.io/) via the official [`@imagekit/nodejs`](https://github.com/imagekit-developer/imagekit-nodejs) SDK
+* **Cloud Storage**
 * **Source Integration**: [GitHub REST API](https://docs.github.com/en/rest) (repo tree + raw file fetch, public or private via per-user token)
 
 ### AI & Vector Databases (RAG)
@@ -57,6 +57,10 @@ Kairis AI is a premium, state-of-the-art, context-aware AI assistant application
 ### 5. Premium Responsive UI & Production Stability
 * Fully compliant with React Rules of Hooks to prevent unexpected runtime errors across state transitions.
 * Fully mobile-responsive layouts with collapsable sidebars.
+
+### 6. Industry-Standard Architecture
+* **Backend — MVC Pattern**: Clean separation of `models` (Mongoose schemas), `controllers` (request/response + business logic), `routes` (Express routers), and `services` (AI/RAG, GitHub, ImageKit, email — reusable logic decoupled from controllers).
+* **Frontend — 4-Layer Feature Architecture**: Each feature (`chat`, `auth`, `landing`) is self-contained with its own `pages` (screens), `components` (reusable presentational UI), `hooks` (state orchestration + business logic), and `services` (API calls) — the same layered structure used in production-grade React codebases, keeping features isolated and independently maintainable.
 
 ---
 
