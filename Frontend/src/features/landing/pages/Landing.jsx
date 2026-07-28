@@ -18,7 +18,10 @@ const RepoDemo = () => {
     return (
         <div className="mt-10 w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-5 text-left pointer-events-auto backdrop-blur">
             <p className="mb-3 text-xs uppercase tracking-wide text-white/40">
-                Try it — chatting with <span className="text-brand-400">{DEMO_REPO}</span>
+                Demo — chatting with the GitHub repo (<span className="text-brand-400">{DEMO_REPO}</span>)
+            </p>
+            <p className="mb-3 text-[11px] text-white/40">
+                This is a quick preview — sign up to chat with any repo live.
             </p>
             <div className="flex flex-wrap gap-2">
                 {DEMO_QA.map((qa, idx) => (
@@ -160,7 +163,7 @@ const Landing = () => {
                     </span>
                 </div>
 
-                <RepoDemo />
+                {!user && <RepoDemo />}
             </main>
         </div>
     );
