@@ -5,35 +5,47 @@ import { fetchRepoFiles } from "../services/github.service.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import userModel from "../models/user.model.js";
+import guestUsageModel from "../models/guestUsage.model.js";
 import { config } from "../config/config.js";
 
+const GUEST_MESSAGE_LIMIT = 5;
+const GUEST_LIMIT_MESSAGE = "You have already used your free limit. Signup or login to continue.";
 
 export async function sendMessage(req, res) {
     const { message, chat: chatId, attachments } = req.body;
+    const isGuest = !req.user;
     let title = null, chat = null;
 
     try {
-        // 1. Verify chat message limit
-        if (chatId) {
+        if (isGuest && req.guest.usage.messageCount >= GUEST_MESSAGE_LIMIT) {
+            return res.status(403).json({ error: GUEST_LIMIT_MESSAGE, code: "GUEST_LIMIT_REACHED" });
+        }
+
+
+        if (chatId && !isGuest) {
             const existingMessageCount = await messageModel.countDocuments({ chat: chatId });
             if (existingMessageCount >= 35) {
-                return res.status(403).json({ 
-                    error: "Chat limit reached. This chat session is closed (max 35 messages). Please switch to a new chat." 
+                return res.status(403).json({
+                    error: "Chat limit reached. This chat session is closed (max 35 messages). Please switch to a new chat."
                 });
             }
         }
 
         // 2. Fetch/Create Chat
         if (!chatId) {
-            title = await generateChatTitle(message);
-            chat = await chatModel.create({
-                user: req.user.id,
-                title
-            });
+
+            title = isGuest ? (message ? message.slice(0, 40) : "Guest chat") : await generateChatTitle(message);
+            chat = await chatModel.create(
+                isGuest
+                    ? { guestId: req.guest.guestId, title }
+                    : { user: req.user.id, title }
+            );
         }
 
         const activeChatId = chatId || chat._id;
-        const activeChat = chat || await chatModel.findById(activeChatId);
+        const activeChat = chat || await chatModel.findOne(
+            isGuest ? { _id: activeChatId, guestId: req.guest.guestId } : { _id: activeChatId, user: req.user.id }
+        );
 
         if (!activeChat) {
             return res.status(404).json({ error: "Chat session not found" });
@@ -50,20 +62,23 @@ export async function sendMessage(req, res) {
         // 4. Fetch all messages in this conversation
         const messages = await messageModel.find({ chat: activeChatId }).sort({ createdAt: 1 });
 
-        // 5. Update User Daily Usage Count
-        const user = await userModel.findById(req.user.id);
-        const now = new Date();
-        const lastDate = new Date(user.lastMessageDate || now);
-        const isSameDay = now.getDate() === lastDate.getDate() &&
-                          now.getMonth() === lastDate.getMonth() &&
-                          now.getFullYear() === lastDate.getFullYear();
+        // 5. Update User Daily Usage Count (authenticated users only)
+        let user = null;
+        if (!isGuest) {
+            user = await userModel.findById(req.user.id);
+            const now = new Date();
+            const lastDate = new Date(user.lastMessageDate || now);
+            const isSameDay = now.getDate() === lastDate.getDate() &&
+                              now.getMonth() === lastDate.getMonth() &&
+                              now.getFullYear() === lastDate.getFullYear();
 
-        if (!isSameDay) {
-            user.messageCountToday = 0;
+            if (!isSameDay) {
+                user.messageCountToday = 0;
+            }
+            user.messageCountToday += 1;
+            user.lastMessageDate = now;
+            await user.save();
         }
-        user.messageCountToday += 1;
-        user.lastMessageDate = now;
-        await user.save();
 
         // 6. Handle automatic summarization after every 12 messages
         if (messages.length > 0 && messages.length % 12 === 0) {
@@ -102,13 +117,15 @@ export async function sendMessage(req, res) {
         const searchFilenames = asksForPrevious ? null : latestFilenames;
 
   
+        const identityId = isGuest ? req.guest.guestId : req.user.id;
+
         let ragContext = "";
         try {
-            const matches = await queryDocuments({ 
-                query: message, 
-                userId: req.user.id,
+            const matches = await queryDocuments({
+                query: message,
+                userId: identityId,
                 chatId: activeChatId,
-                filenames: searchFilenames 
+                filenames: searchFilenames
             });
 
 
@@ -127,7 +144,11 @@ export async function sendMessage(req, res) {
         let errorLog = [];
         let modelQueue = [];
 
-        if (user.messageCountToday <= 20) {
+        if (isGuest) {
+            // Guests never touch Gemini for chat replies - only mistral/llama
+            // (Groq). Gemini is reserved for the one-photo-per-chat OCR path.
+            modelQueue = ["mistral", "llama"];
+        } else if (user.messageCountToday <= 20) {
             modelQueue = ["gemini", "mistral", "llama"];
         } else {
             modelQueue = ["mistral", "llama"];
@@ -157,10 +178,16 @@ export async function sendMessage(req, res) {
             role: "ai"
         });
 
+        if (isGuest) {
+            req.guest.usage.messageCount += 1;
+            await req.guest.usage.save();
+        }
+
         res.status(201).json({
             title,
             chat: activeChat,
             aiMessage,
+            ...(isGuest ? { guestMessagesLeft: Math.max(0, GUEST_MESSAGE_LIMIT - req.guest.usage.messageCount) } : {}),
         });
 
     } catch (error) {
@@ -185,6 +212,7 @@ export async function uploadDocument(req, res) {
 
         const { buffer, mimetype, originalname, size } = req.file;
         const { chatId } = req.body;
+        const isGuest = !req.user;
 
         // Check single file size (5MB limit)
         if (size > 5 * 1024 * 1024) {
@@ -196,10 +224,23 @@ export async function uploadDocument(req, res) {
             return res.status(400).json({ message: "Only PDF and image files (png, jpg, webp) are supported" });
         }
 
+        const targetChatId = chatId || "general";
+
+        if (isGuest) {
+            if (req.guest.usage.messageCount >= GUEST_MESSAGE_LIMIT) {
+                return res.status(403).json({ message: GUEST_LIMIT_MESSAGE, code: "GUEST_LIMIT_REACHED" });
+            }
+            if (mimetype === "application/pdf") {
+                return res.status(403).json({ message: "Guests can upload one photo per chat. Signup or login to upload PDFs." });
+            }
+            if (req.guest.usage.photoUsedChats.includes(String(targetChatId))) {
+                return res.status(403).json({ message: GUEST_LIMIT_MESSAGE, code: "GUEST_LIMIT_REACHED" });
+            }
+        }
+
         // Upload to ImageKit (CDN), with a fallback to local disk storage
         let fileUrl = "";
-        const userId = req.user.id;
-        const targetChatId = chatId || "general";
+        const userId = isGuest ? req.guest.guestId : req.user.id;
         const folderPath = `/kairis-ai/${userId}/${targetChatId}`;
 
         try {
@@ -226,9 +267,14 @@ export async function uploadDocument(req, res) {
             buffer,
             mimetype,
             filename: originalname,
-            userId: req.user.id,
-            chatId: chatId || "general"
+            userId,
+            chatId: targetChatId
         });
+
+        if (isGuest) {
+            req.guest.usage.photoUsedChats.push(String(targetChatId));
+            await req.guest.usage.save();
+        }
 
         res.status(201).json({
             message: "Document stored successfully",
@@ -251,6 +297,10 @@ async function getUserGithubToken(userId) {
 
 export async function connectRepo(req, res) {
     try {
+        if (!req.user) {
+            return res.status(403).json({ message: "Guests can only try the demo repo. Signup or login to connect your own repository." });
+        }
+
         const { repoUrl, chatId } = req.body;
 
         if (!repoUrl || typeof repoUrl !== "string") {
@@ -306,13 +356,25 @@ export async function connectRepo(req, res) {
 }
 
 export async function getChats(req, res) {
-    const user = req.user;
-
-    const chats = await chatModel.find({ user: user.id });
+    const chats = await chatModel.find(
+        req.user ? { user: req.user.id } : { guestId: req.guest.guestId }
+    );
 
     res.status(200).json({
         message: "Chats retreived successfully",
-        chats
+        chats,
+        // Guest quota/block state is authoritative on the server (tracked by
+        // fingerprint) but the frontend only holds it in memory - it resets
+        // to a default "5/5, not blocked" display on every page refresh.
+        // Sending this back on every getChats call (called on Dashboard
+        // mount) lets the UI re-sync with reality instead of showing stale
+        // optimistic state after a reload.
+        ...(req.user ? {} : {
+            guestStatus: {
+                messagesLeft: Math.max(0, GUEST_MESSAGE_LIMIT - req.guest.usage.messageCount),
+                blocked: req.guest.usage.messageCount >= GUEST_MESSAGE_LIMIT,
+            },
+        }),
     });
 }
 
@@ -320,12 +382,11 @@ export async function getChats(req, res) {
 export async function getMessages(req, res) {
     const { chatId } = req.params;
 
-    const chat = await chatModel.findOne({
-        _id: chatId,
-        user: req.user.id
-    })
+    const chat = await chatModel.findOne(
+        req.user ? { _id: chatId, user: req.user.id } : { _id: chatId, guestId: req.guest.guestId }
+    )
 
-    if (!chat) {   
+    if (!chat) {
         return res.status(404).json({
             message: "Chat not found"
         })
@@ -355,7 +416,7 @@ export async function renameChat(req, res) {
     }
 
     const chat = await chatModel.findOneAndUpdate(
-        { _id: chatId, user: req.user.id },
+        req.user ? { _id: chatId, user: req.user.id } : { _id: chatId, guestId: req.guest.guestId },
         { title: title.trim() },
         { new: true }
     );
@@ -379,10 +440,9 @@ export async function deleteChat(req, res) {
 
     const { chatId } = req.params;
 
-    const chat = await chatModel.findOneAndDelete({
-        _id: chatId,
-        user: req.user.id
-    })
+    const chat = await chatModel.findOneAndDelete(
+        req.user ? { _id: chatId, user: req.user.id } : { _id: chatId, guestId: req.guest.guestId }
+    )
 
     if (!chat) {
         return res.status(404).json({
@@ -395,7 +455,7 @@ export async function deleteChat(req, res) {
     })
 
     try {
-        await deleteChatVectors({ userId: req.user.id, chatId });
+        await deleteChatVectors({ userId: req.user ? req.user.id : req.guest.guestId, chatId });
     } catch (vectorErr) {
         // Don't fail the delete if Pinecone cleanup errors (e.g. chat had no
         // vectors, or index unreachable) - the chat/messages are already gone.

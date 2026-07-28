@@ -76,7 +76,12 @@ export async function generateResponse(messages, ragContext = "", chatSummary = 
                 You are a helpful and precise assistant for answering questions.
                 If you don't know the answer, say you don't know.
                 If the question requires up-to-date information, use the "searchInternet" tool to get the latest information from the internet and then answer based on the search results.
-                
+
+                Formatting and length:
+                - Keep answers concise to medium length. Cover the important points well, but do not write exhaustive, encyclopedia-style answers with dozens of sections/tables unless the user explicitly asks for an in-depth or complete reference.
+                - Use markdown headings (## / ###) in bold for the main sections of your answer so it's easy to scan, but only for genuinely distinct topics - don't create a heading for every single sentence.
+                - Prefer short bullet points over large tables unless a table is clearly the best way to compare a handful of items.
+
                 Current Date and Time: ${currentDate}
                 
                 ${chatSummary ? `
