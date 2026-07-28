@@ -3,7 +3,6 @@ import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
 import Dashboard from "../features/chat/pages/Dashboard";
 import Landing from "../features/landing/pages/Landing";
-import Protected from "../features/auth/components/Protected";
 
 
 export const router = createBrowserRouter([
@@ -20,9 +19,8 @@ export const router = createBrowserRouter([
         element: <Register />
     },
     {
+
         path: "/dashboard",
-        element: <Protected>
-            <Dashboard />
-        </Protected>
+        element: <Dashboard />
     }
 ])

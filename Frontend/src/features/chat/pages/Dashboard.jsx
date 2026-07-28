@@ -26,7 +26,7 @@ import {
   MessageScrollerItem,
   MessageScrollerButton,
 } from '../../../components/ui/message-scroller';
-import { markLastMessageDoneStreaming, addNewMessage } from '../chat.slice';
+import { markLastMessageDoneStreaming, addNewMessage, setGuestBlocked, setGuestMessagesLeft } from '../chat.slice';
 import { useModeAnimation, ThemeAnimationType } from 'react-theme-switch-animation';
 import { Moon, Sun, ArrowUp, X, Mic } from 'lucide-react';
 import { useSidebar } from '../../../components/ui/sidebar';
@@ -57,6 +57,9 @@ const Dashboard = () => {
   const currentChatId = useSelector((state) => state.chat.currentChatId);
   const isLoading = useSelector((state) => state.chat.isLoading);
   const user = useSelector((state) => state.auth.user);
+  const guestMessagesLeft = useSelector((state) => state.chat.guestMessagesLeft);
+  const guestBlocked = useSelector((state) => state.chat.guestBlocked);
+  const isGuest = !user;
   const [totalUploadedSize, setTotalUploadedSize] = useState(0);
   const [showRepoInput, setShowRepoInput] = useState(false);
   const [repoUrlInput, setRepoUrlInput] = useState('');
@@ -107,13 +110,27 @@ const Dashboard = () => {
   const isTooLong = messagesCount >= 30;
   const isCapped = messagesCount >= 35;
   const isUploadingFiles = attachedFiles.some(f => f.status === 'uploading');
+  const isGuestBlocked = isGuest && guestBlocked;
 
   const limitWarning = isTooLong && (
     <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3 text-center text-sm font-medium text-orange-500">
-        {isCapped 
-          ? "Chat limit reached. This chat session is closed. Please start a new chat." 
+        {isCapped
+          ? "Chat limit reached. This chat session is closed. Please start a new chat."
           : "This chat is becoming too long. Kindly switch to a new chat."
         }
+    </div>
+  );
+
+  const guestBanner = isGuest && (
+    <div className="mb-3 rounded-lg border border-brand-400/20 bg-brand-400/10 p-3 text-center text-sm font-medium text-[color:var(--text-primary)]">
+      {isGuestBlocked ? (
+        "You have already used your free limit. Signup or login to continue."
+      ) : (
+        <>
+          Guest mode · {guestMessagesLeft ?? 5}/5 messages left ·{" "}
+          <Link to="/register" className="text-brand-400 hover:underline">Sign up to save this chat</Link>
+        </>
+      )}
     </div>
   );
 
@@ -219,6 +236,13 @@ const Dashboard = () => {
         ));
       } catch (err) {
         console.error("Failed to upload file:", fItem.name, err);
+        if (err.response?.data?.message) {
+          alert(err.response.data.message);
+        }
+        if (err.response?.data?.code === "GUEST_LIMIT_REACHED") {
+          dispatch(setGuestBlocked(true));
+          dispatch(setGuestMessagesLeft(0));
+        }
         setAttachedFiles(prev => prev.map(item =>
           item.id === fItem.id
             ? { ...item, status: 'error' }
@@ -390,8 +414,8 @@ const Dashboard = () => {
         value={chatInput}
         onChange={(event) => setChatInput(event.target.value)}
         onPaste={handlePasteFiles}
-        disabled={isCapped}
-        placeholder={isCapped ? "Chat session closed (limit reached)" : "Type your message..."}
+        disabled={isCapped || isGuestBlocked}
+        placeholder={isGuestBlocked ? "Signup or login to continue" : isCapped ? "Chat session closed (limit reached)" : "Type your message..."}
         className="w-full bg-transparent text-base outline-none placeholder:text-[color:var(--text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
       />
 
@@ -408,31 +432,33 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isCapped || attachedFiles.length >= 5}
+            disabled={isCapped || isGuestBlocked || attachedFiles.length >= 5 || (isGuest && attachedFiles.length >= 1)}
             aria-label="Attach image"
             className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/10 text-[color:var(--text-secondary)] transition hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10 disabled:pointer-events-none disabled:opacity-50"
           >
             <Plus className="size-4" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowRepoInput((prev) => !prev)}
-            disabled={isCapped}
-            aria-label="Connect GitHub repo"
-            className={`inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition disabled:pointer-events-none disabled:opacity-50 ${
-              showRepoInput
-                ? "border-brand-400 bg-brand-400/20 text-brand-400"
-                : "border-black/10 text-[color:var(--text-secondary)] hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10"
-            }`}
-          >
-            <GitBranch className="size-4" />
-          </button>
+          {!isGuest && (
+            <button
+              type="button"
+              onClick={() => setShowRepoInput((prev) => !prev)}
+              disabled={isCapped}
+              aria-label="Connect GitHub repo"
+              className={`inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition disabled:pointer-events-none disabled:opacity-50 ${
+                showRepoInput
+                  ? "border-brand-400 bg-brand-400/20 text-brand-400"
+                  : "border-black/10 text-[color:var(--text-secondary)] hover:bg-black/10 hover:text-[color:var(--text-primary)] dark:border-white/15 dark:hover:bg-white/10"
+              }`}
+            >
+              <GitBranch className="size-4" />
+            </button>
+          )}
 
           <button
             type="button"
             onClick={handleVoiceInput}
-            disabled={isCapped}
+            disabled={isCapped || isGuestBlocked}
             aria-label="Voice prompt"
             className={`inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition disabled:pointer-events-none disabled:opacity-50 ${
               isListening
@@ -446,7 +472,7 @@ const Dashboard = () => {
 
         <button
           type="submit"
-          disabled={(!chatInput.trim() && attachedFiles.length === 0) || isLoading || isCapped || isUploadingFiles || isConnectingRepo}
+          disabled={(!chatInput.trim() && attachedFiles.length === 0) || isLoading || isCapped || isUploadingFiles || isConnectingRepo || isGuestBlocked}
           aria-label="Send message"
           className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-400 text-zinc-950 transition hover:bg-brand-500 disabled:pointer-events-none disabled:opacity-50"
         >
@@ -581,18 +607,28 @@ const Dashboard = () => {
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{(user?.fullname).toUpperCase() || 'Guest'}</p>
-                <p className="truncate text-xs text-[color:var(--text-secondary)]">{user?.email}</p>
+                <p className="truncate text-sm font-medium">{(user?.fullname || 'Guest').toUpperCase()}</p>
+                <p className="truncate text-xs text-[color:var(--text-secondary)]">
+                  {user?.email || (
+                    <>
+                      <Link to="/register" className="text-brand-400 hover:underline">Sign up</Link>
+                      {" / "}
+                      <Link to="/login" className="text-brand-400 hover:underline">Log in</Link>
+                    </>
+                  )}
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={handleLogoutClick}
-                aria-label="Log out"
-                title="Log out"
-                className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[color:var(--text-secondary)] transition hover:bg-red-500/10 hover:text-red-500"
-              >
-                <LogOut className="size-4" />
-              </button>
+              {user && (
+                <button
+                  type="button"
+                  onClick={handleLogoutClick}
+                  aria-label="Log out"
+                  title="Log out"
+                  className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[color:var(--text-secondary)] transition hover:bg-red-500/10 hover:text-red-500"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              )}
             </div>
           </SidebarFooter>
         </Sidebar>
@@ -625,7 +661,10 @@ const Dashboard = () => {
                   Start a conversation below to get answers backed by real sources.
                 </p>
 
-                <div className="w-full max-w-2xl">{promptForm}</div>
+                <div className="w-full max-w-2xl">
+                  {guestBanner}
+                  {promptForm}
+                </div>
               </div>
             ) : (
               <>
@@ -667,7 +706,10 @@ const Dashboard = () => {
                 </MessageScrollerProvider>
 
                 {limitWarning}
-                <div className="mb-2 md:mb-7">{promptForm}</div>
+                <div className="mb-2 md:mb-7">
+                  {guestBanner}
+                  {promptForm}
+                </div>
               </>
             )}
           </section>

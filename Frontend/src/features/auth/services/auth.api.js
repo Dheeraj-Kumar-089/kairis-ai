@@ -1,11 +1,23 @@
 import axios from 'axios'
 import { store } from '../../../app/app.store.js'
 import { setUser } from '../auth.slice.js'
+import { getFingerprint } from '../../../utils/fingerprint.js'
 
 export const api = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
     withCredentials: true,
 })
+
+
+api.interceptors.request.use(async (requestConfig) => {
+    try {
+        const fingerprint = await getFingerprint();
+        requestConfig.headers["X-Guest-Fingerprint"] = fingerprint;
+    } catch {
+
+    }
+    return requestConfig;
+});
 
 // Automatically log out user if any request returns 401 Unauthorized
 api.interceptors.response.use(

@@ -1,10 +1,68 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { GravityStarsBackground } from '@/components/animate-ui/components/backgrounds/gravity-stars';
 import AnimatedButton from "../../../components/ui/animated-button";
 import KineticTextLoader from "../../../components/ui/kinetic-text-loader";
+import DEMO_QA from "../demoRepoQA.json";
+
+
+const DEMO_REPO = "Dheeraj-Kumar-089/kairis-ai";
+
+const RepoDemo = () => {
+    const [activeIdx, setActiveIdx] = useState(null);
+
+    return (
+        <div className="mt-10 w-full max-w-xl rounded-2xl border border-white/10 bg-white/5 p-5 text-left pointer-events-auto backdrop-blur">
+            <p className="mb-3 text-xs uppercase tracking-wide text-white/40">
+                Try it — chatting with <span className="text-brand-400">{DEMO_REPO}</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+                {DEMO_QA.map((qa, idx) => (
+                    <button
+                        key={qa.question}
+                        type="button"
+                        onClick={() => setActiveIdx(idx)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
+                            activeIdx === idx
+                                ? "border-brand-400 bg-brand-400/20 text-brand-400"
+                                : "border-white/15 text-white/70 hover:bg-white/10"
+                        }`}
+                    >
+                        {qa.question}
+                    </button>
+                ))}
+            </div>
+            {activeIdx !== null && (
+                <div className="mt-4 max-h-80 overflow-y-auto pr-1 text-left text-sm leading-relaxed text-white/70">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="mb-2 list-disc pl-5">{children}</ul>,
+                            ol: ({ children }) => <ol className="mb-2 list-decimal pl-5">{children}</ol>,
+                            strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                            code: ({ children }) => (
+                                <code className="rounded bg-white/10 px-1 py-0.5 text-xs text-brand-400">{children}</code>
+                            ),
+                            pre: ({ children }) => (
+                                <pre className="mb-2 overflow-x-auto rounded-lg bg-black/40 p-3 text-xs">{children}</pre>
+                            ),
+                            h1: ({ children }) => <h1 className="mb-2 mt-4 text-xl font-bold text-white first:mt-0">{children}</h1>,
+                            h2: ({ children }) => <h2 className="mb-2 mt-4 text-lg font-bold text-white first:mt-0">{children}</h2>,
+                            h3: ({ children }) => <h3 className="mb-2 mt-3 text-base font-bold text-white first:mt-0">{children}</h3>,
+                        }}
+                    >
+                        {DEMO_QA[activeIdx].answer}
+                    </ReactMarkdown>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const Landing = () => {
     const user = useSelector((state) => state.auth.user);
@@ -76,10 +134,18 @@ const Landing = () => {
                     Kairis AI is a premium, context-aware assistant with intelligent multi-model routing, smart RAG document Q&A, and fast voice input.
                 </p>
 
-                <div className="mt-9 pointer-events-auto">
+                <div className="mt-9 flex flex-wrap items-center justify-center gap-3 pointer-events-auto">
                     <Link to={user ? "/dashboard" : "/register"}>
                         <AnimatedButton className="px-8 py-3 text-base cursor-pointer">Get Started</AnimatedButton>
                     </Link>
+                    {!user && (
+                        <Link
+                            to="/dashboard"
+                            className="rounded-[5px] border border-white/15 px-6 py-3 text-base font-medium text-white/80 transition hover:bg-white/5 hover:text-white"
+                        >
+                            Try without signup
+                        </Link>
+                    )}
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-2 pointer-events-none">
@@ -93,6 +159,8 @@ const Landing = () => {
                         Multi-model AI
                     </span>
                 </div>
+
+                <RepoDemo />
             </main>
         </div>
     );

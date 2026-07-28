@@ -6,9 +6,17 @@ const chatSlice = createSlice({
         chats:{},
         currentChatId:null,
         isLoading:null,
-        error:null
+        error:null,
+        guestMessagesLeft:null,
+        guestBlocked:false,
     },
     reducers:{
+        setGuestMessagesLeft:(state,action)=>{
+            state.guestMessagesLeft = action.payload
+        },
+        setGuestBlocked:(state,action)=>{
+            state.guestBlocked = action.payload
+        },
         createNewChat:(state,action)=>{
             const {chatId, title} = action.payload
             state.chats[chatId]={
@@ -91,5 +99,5 @@ const chatSlice = createSlice({
     }
 })
 
-export const { setChats, setCurrentChatId, setLoading, setError, createNewChat, addNewMessage, addMessages, removeChat, renameChatTitle, markLastMessageDoneStreaming, replaceTempChatId, resetChatState } = chatSlice.actions
+export const { setChats, setCurrentChatId, setLoading, setError, createNewChat, addNewMessage, addMessages, removeChat, renameChatTitle, markLastMessageDoneStreaming, replaceTempChatId, resetChatState, setGuestMessagesLeft, setGuestBlocked } = chatSlice.actions
 export default chatSlice.reducer

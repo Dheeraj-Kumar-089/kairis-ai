@@ -1,7 +1,7 @@
 import { initializeSocketConnection } from "../services/chat.socket";
 import { useDispatch } from "react-redux";
 import { sendMessage, getChats, getMessages, deleteChat as deleteChatApi, renameChat as renameChatApi, uploadDocument, connectRepo } from "../services/chat.api.js";
-import { setChats, setCurrentChatId, setError, setLoading, createNewChat, addNewMessage, addMessages, removeChat, renameChatTitle, replaceTempChatId } from "../chat.slice";
+import { setChats, setCurrentChatId, setError, setLoading, createNewChat, addNewMessage, addMessages, removeChat, renameChatTitle, replaceTempChatId, setGuestMessagesLeft, setGuestBlocked } from "../chat.slice";
 
 
 export function useChat() {
@@ -30,7 +30,7 @@ export function useChat() {
         dispatch(setLoading(true));
         try {
             const data = await sendMessage({ message, chatId: isNewChat ? null : chatId, attachments });
-            const { chat, aiMessage } = data;
+            const { chat, aiMessage, guestMessagesLeft } = data;
 
             if (isNewChat) {
                 dispatch(replaceTempChatId({
@@ -46,8 +46,16 @@ export function useChat() {
                 role: aiMessage.role,
                 streaming: true,
             }));
+
+            if (guestMessagesLeft !== undefined) {
+                dispatch(setGuestMessagesLeft(guestMessagesLeft));
+            }
         } catch (error) {
-            dispatch(setError(error.response?.data?.message || "Failed to send message"));
+            dispatch(setError(error.response?.data?.error || error.response?.data?.message || "Failed to send message"));
+            if (error.response?.data?.code === "GUEST_LIMIT_REACHED") {
+                dispatch(setGuestBlocked(true));
+                dispatch(setGuestMessagesLeft(0));
+            }
             if (isNewChat) {
                 dispatch(removeChat(activeChatId));
             }
@@ -60,7 +68,7 @@ export function useChat() {
     async function handleGetChats() {
         dispatch(setLoading(true));
         const data = await getChats();
-        const { chats } = data;
+        const { chats, guestStatus } = data;
         dispatch(setChats(chats.reduce((acc, chat) => {
             acc[chat._id] = {
                 id: chat._id,
@@ -70,6 +78,10 @@ export function useChat() {
             };
             return acc;
         }, {})));
+        if (guestStatus) {
+            dispatch(setGuestMessagesLeft(guestStatus.messagesLeft));
+            dispatch(setGuestBlocked(guestStatus.blocked));
+        }
         dispatch(setLoading(false));
     }
 
